@@ -31,6 +31,11 @@ function love.load()
     spriteAtlas = love.graphics.newImage'sprites.png'
     spriteAtlas:setFilter('nearest', 'nearest')
 
+    spriteSize = 50
+    function genQuad(xi, yi)
+        return love.graphics.newQuad((xi-1)*spriteSize, (yi-1)*spriteSize, spriteSize, spriteSize, spriteAtlas)
+    end
+
     activeboard = require'board'.new{
         rows = 10,
         cols = 8,
@@ -41,6 +46,14 @@ function love.load()
             if piece then
                 return require'pieces'.getTypeData(piece.type)
             end
+        end,
+        getResourceCount = function()
+        end,
+        getTurnNumber = function()
+            return activeboard.turn
+        end,
+        endTurn = function()
+            activeboard:endTurn()
         end,
     }
     activeboard:summonAt('king', 2, 10)
@@ -83,22 +96,18 @@ function love.draw()
 end
 
 function love.mousemoved(x, y, xDelta, yDelta, istouch)
-    if activeboard then
-        activeboard:mousemoved(x, y, xDelta, yDelta, istouch) -- love.graphics.getWidth()/2,love.graphics.getHeight()/2
-    end
-    -- print(x, y, xDelta, yDelta, ...)
+    if activepreview and activepreview:mousemoved(x, y, xDelta, yDelta, istouch) then return end
+    if activeboard   and   activeboard:mousemoved(x, y, xDelta, yDelta, istouch) then return end
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-    if activeboard then
-        activeboard:mousepressed(x, y, button, istouch, presses)
-    end
+    if activepreview and activepreview:mousepressed(x, y, button, istouch, presses) then return end
+    if activeboard   and   activeboard:mousepressed(x, y, button, istouch, presses) then return end
 end
 
 function love.mousereleased(x, y, button, istouch, presses)
-    if activeboard then
-        activeboard:mousereleased(x, y, button, istouch, presses)
-    end
+    if activepreview and activepreview:mousereleased(x, y, button, istouch, presses) then return end
+    if activeboard   and   activeboard:mousereleased(x, y, button, istouch, presses) then return end
 end
 
 function love.wheelmoved(x, y)

@@ -1,8 +1,3 @@
-local spriteSize = 50
-local function genQuad(xi, yi)
-    return love.graphics.newQuad((xi-1)*spriteSize, (yi-1)*spriteSize, spriteSize, spriteSize, spriteAtlas)
-end
-
 local function basic1move(self, targetX, targetY)
     return
         math.abs(self.pos[1]-targetX)<=1 and
@@ -441,7 +436,7 @@ local piecetypes = {
     },
     -- parrot = {
     --     name = 'Parrot',
-    --     desc = 'Parrots can jump to any space up to 2 cardinally adjacent spaces away or 2 spaces away diagonally. They can copy the attack a laterally adjacent creature, prioritising those to the left from it\'s controllers perspective.',
+    --     desc = 'Parrots can jump to any space up to 2 cardinally adjacent spaces away or 2 spaces away diagonally. They can copy the attack of a laterally adjacent non-parrot creature, prioritising the closest to the edge of the board.',
     --     cost = 5,
     --     deck = true,
     --     moveRange = 2,
@@ -563,12 +558,14 @@ end
 
 function piece:canTravelTo(targetX, targetY)
     if self.dead then return end
+    if self:hasSummoningSickness() then return end
     if self.pos[1]==targetX and self.pos[2]==targetY then return end
     return self.typeData.canTravelTo(self, targetX, targetY)
 end
 
 function piece:canAttackTo(targetX, targetY)
     if self.dead then return end
+    if self:hasSummoningSickness() then return end
     if self.typeData.attackMoveOnly then return end
     if not self.typeData.attackRange or self.typeData.attackRange==0 then return end
     if self.pos[1]==targetX and self.pos[2]==targetY then return end
@@ -602,6 +599,9 @@ function piece:draw(boardXPos, boardYPos, gridXPos, gridYPos)
     -- if not self.pos then return end
     love.graphics.draw(spriteAtlas, piecetypes[self.type].quad, gridXPos, gridYPos+self.board.scale*spriteSize*0.25, self.rotation or 0, self.board.scale, self.board.scale, spriteSize/2, spriteSize*0.75)
 end
+
+function piece:getCurrentTurn() return self.board.turn end
+function piece:hasSummoningSickness() return self.board.turn==self.summonTurn end
 
 -- function piece:mousemoved(x, y, xDelta, yDelta, istouch)
 -- end

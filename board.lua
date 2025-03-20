@@ -14,6 +14,8 @@ function board.new(data)
     data.cols = data.cols or 8
     data.homeRows = data.homeRows or 2
 
+    data.turn = data.turn or -1
+
     for x=1, data.cols do
         new.grid[x] = {}
         for y=1, data.rows do
@@ -189,6 +191,14 @@ end
 
 local mousePressedX, mousePressedY
 
+function board:canEndTurn() return true end -- TODO
+
+function board:endTurn()
+    if not self:canEndTurn() then return end
+    self.turn = self.turn+1
+    print(self.turn)
+end
+
 function board:isWithinBounds(x, y)
     return x and y and x>0 and y>0 and x<self.cols+1 and y<self.rows+1
 end
@@ -292,6 +302,7 @@ function board:summonAt(pType, x, y)
         type = pType,
         board = self,
         pos = {x, y},
+        summonTurn = self.turn,
     }
     table.insert(self.grid[x][y], piece)
 end
