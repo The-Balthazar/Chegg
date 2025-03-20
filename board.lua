@@ -2,15 +2,13 @@ local board = {}
 board.__index = board
 
 function board.new(data)
-    local new = setmetatable({
-        grid = {},
-        data = data,
-        pos  = {love.graphics.getWidth()/2,love.graphics.getHeight()/2},
-        offset = {0,0},
-        scale  = 1,
-        scaleT = 1,
-        hoverTile = {},
-    }, board)
+    data.grid = {}
+    data.pos = {love.graphics.getWidth()/2,love.graphics.getHeight()/2}
+    data.offset = {0,0}
+    data.scale = 1
+    data.scaleT = 1
+    data.hoverTile = {}
+    local new = setmetatable(data, board)
 
     data.rows = data.rows or 10
     data.cols = data.cols or 8
@@ -40,8 +38,8 @@ local particles = {
 function board:update(delta)
     self.pos[1], self.pos[2] = love.graphics.getWidth()/2,love.graphics.getHeight()/2
     self.scale = math.easeDecay(self.scale, self.scaleT, 24, delta)
-    for y=1, self.data.rows do
-        for x=1, self.data.cols do
+    for y=1, self.rows do
+        for x=1, self.cols do
             local grid = self.grid[x][y]
             for i, piece in ipairs(grid) do
                 piece:update(delta)
@@ -68,15 +66,15 @@ function board:createEffectAt(effect, x, y)
 end
 
 function board:draw()
-    xPos = self.pos[1]-self.data.cols/2*gridSize*self.scale+self.offset[1]*self.scale
-    yPos = self.pos[2]-self.data.rows/2*gridSize*self.scale+self.offset[2]*self.scale
+    xPos = self.pos[1]-self.cols/2*gridSize*self.scale+self.offset[1]*self.scale
+    yPos = self.pos[2]-self.rows/2*gridSize*self.scale+self.offset[2]*self.scale
 
     if self.mouseOver then
-        love.graphics.rectangle("fill", xPos-highlightBorder*self.scale, yPos-highlightBorder*self.scale, gridSize*self.data.cols*self.scale+highlightBorder*self.scale*2, gridSize*self.data.rows*self.scale+highlightBorder*self.scale*2)
+        love.graphics.rectangle("fill", xPos-highlightBorder*self.scale, yPos-highlightBorder*self.scale, gridSize*self.cols*self.scale+highlightBorder*self.scale*2, gridSize*self.rows*self.scale+highlightBorder*self.scale*2)
     end
 
-    for y=0, self.data.rows-1 do
-        for x=0, self.data.cols-1 do
+    for y=0, self.rows-1 do
+        for x=0, self.cols-1 do
             love.graphics.setColor(x%2==y%2 and black or white)
             love.graphics.rectangle("fill", gridSize*self.scale*x+xPos, gridSize*self.scale*y+yPos, gridSize*self.scale, gridSize*self.scale)
         end
@@ -91,23 +89,23 @@ function board:draw()
     love.graphics.rectangle("fill",
         xPos,
         yPos,
-        gridSize*self.data.cols*self.scale,
-        gridSize*self.data.homeRows*self.scale
+        gridSize*self.cols*self.scale,
+        gridSize*self.homeRows*self.scale
     )
     love.graphics.setColor(0, 0, 1, 0.25)
     love.graphics.rectangle("fill",
         xPos,
-        yPos+gridSize*(self.data.rows-self.data.homeRows)*self.scale,
-        gridSize*self.data.cols*self.scale,
-        gridSize*self.data.homeRows*self.scale
+        yPos+gridSize*(self.rows-self.homeRows)*self.scale,
+        gridSize*self.cols*self.scale,
+        gridSize*self.homeRows*self.scale
     )
 
     if selectedPiece then
-        local p = selectedPiece.data.pos
+        local p = selectedPiece.pos
         local r = selectedPiece.moveRange
         if p and r then
-            for y=math.max(1, p[2]-r), math.min(p[2]+r, self.data.rows) do
-                for x=math.max(1, p[1]-r), math.min(p[1]+r, self.data.cols) do
+            for y=math.max(1, p[2]-r), math.min(p[2]+r, self.rows) do
+                for x=math.max(1, p[1]-r), math.min(p[1]+r, self.cols) do
                     local isHover = self.hoverTile[1]==x and self.hoverTile[2]==y
                     if selectedPiece:canTravelTo(x,y) then
                         if self:getLivingPieceAt(x, y) then
@@ -123,8 +121,8 @@ function board:draw()
         end
         local r = selectedPiece.attackRange
         if p and r then
-            for y=math.max(1, p[2]-r), math.min(p[2]+r, self.data.rows) do
-                for x=math.max(1, p[1]-r), math.min(p[1]+r, self.data.cols) do
+            for y=math.max(1, p[2]-r), math.min(p[2]+r, self.rows) do
+                for x=math.max(1, p[1]-r), math.min(p[1]+r, self.cols) do
                     local isHover = dragWithPiece and self.hoverTile[1]==x and self.hoverTile[2]==y
                     if selectedPiece:canAttackTo(x,y) then
                         love.graphics.setColor(1, 0, 0, isHover and 1 or 0.5)
@@ -159,16 +157,16 @@ function board:draw()
             love.graphics.setColor(0, 0, 1, canTarget and 1 or inbounds and 0.25 or 0.05)
         end
         love.graphics.line(
-            gridSize*self.scale*(dragWithPiece.data.pos[1]-0.5)+xPos,
-            gridSize*self.scale*(dragWithPiece.data.pos[2]-0.5)+yPos,
+            gridSize*self.scale*(dragWithPiece.pos[1]-0.5)+xPos,
+            gridSize*self.scale*(dragWithPiece.pos[2]-0.5)+yPos,
             canTarget and gridSize*self.scale*(x-0.5)+xPos or love.mouse.getX(),
             canTarget and gridSize*self.scale*(y-0.5)+yPos or love.mouse.getY()
         )
     end
 
     love.graphics.setColor(1, 1, 1, 1)
-    for y=1, self.data.rows do
-        for x=1, self.data.cols do
+    for y=1, self.rows do
+        for x=1, self.cols do
             local grid = self.grid[x][y]
             if grid[1] then
                 for i=#grid, 1, -1 do
@@ -192,12 +190,12 @@ end
 local mousePressedX, mousePressedY
 
 function board:isWithinBounds(x, y)
-    return x and y and x>0 and y>0 and x<self.data.cols+1 and y<self.data.rows+1
+    return x and y and x>0 and y>0 and x<self.cols+1 and y<self.rows+1
 end
 
 function board:getRelativeMouse(x, y)
-    return  x-self.pos[1]+self.data.cols/2*gridSize*self.scale-self.offset[1]*self.scale,
-            y-self.pos[2]+self.data.rows/2*gridSize*self.scale-self.offset[2]*self.scale
+    return  x-self.pos[1]+self.cols/2*gridSize*self.scale-self.offset[1]*self.scale,
+            y-self.pos[2]+self.rows/2*gridSize*self.scale-self.offset[2]*self.scale
 end
 
 function board:screenPosIsOverBoard(x,y)
@@ -207,8 +205,8 @@ end
 
 function board:relativePosIsOverBoard(relativeX, relativeY)
     return relativeX>0 and relativeY>0
-        and relativeX<self.data.cols*gridSize*self.scale
-        and relativeY<self.data.rows*gridSize*self.scale
+        and relativeX<self.cols*gridSize*self.scale
+        and relativeY<self.rows*gridSize*self.scale
 end
 
 function board:getGridCoordAtRelativePos(relativeX, relativeY)
@@ -280,10 +278,10 @@ function board:wheelmoved(x, y)
 end
 
 function board:deleteFrom(piece)
-    local px, py = unpack(piece.data.pos)
+    local px, py = unpack(piece.pos)
     if table.removeByValue(self.grid[px][py], piece) then return true end
-    for y=1, self.data.rows do
-        for x=1, self.data.cols do
+    for y=1, self.rows do
+        for x=1, self.cols do
             if table.removeByValue(self.grid[x][y], piece) then return true end
         end
     end
@@ -299,9 +297,9 @@ function board:summonAt(pType, x, y)
 end
 
 function board:moveTo(piece, x, y)
-    local px, py = unpack(piece.data.pos)
+    local px, py = unpack(piece.pos)
     table.insert(self.grid[x][y], 1, table.removeByValue(self.grid[px][py], piece))
-    piece.data.pos[1], piece.data.pos[2] = x, y
+    piece.pos[1], piece.pos[2] = x, y
 
     return true
 end

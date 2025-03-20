@@ -39,7 +39,7 @@ function love.load()
         getPreviewItem = function()
             local piece = activeboard:getSelectedPiece()
             if piece then
-                return require'pieces'.getTypeData(piece.data.type)
+                return require'pieces'.getTypeData(piece.type)
             end
         end,
     }
