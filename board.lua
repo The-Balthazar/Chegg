@@ -1,29 +1,48 @@
 local board = {}
 board.__index = board
 
-function board.new(data)
-    data.grid = {}
-    data.pos = {love.graphics.getWidth()/2,love.graphics.getHeight()/2}
-    data.offset = {0,0}
-    data.scale = 1
-    data.scaleT = 1
-    data.hoverTile = {}
-    local new = setmetatable(data, board)
+function board:new()
+    setmetatable(self, board)
+    self.grid = {}
+    self.pos = {love.graphics.getWidth()/2,love.graphics.getHeight()/2}
+    self.offset = {0,0}
+    self.scale = 1
+    self.scaleT = 1
+    self.hoverTile = {}
 
-    data.rows = data.rows or 10
-    data.cols = data.cols or 8
-    data.homeRows = data.homeRows or 2
+    self.rows = self.rows or 10
+    self.cols = self.cols or 8
+    self.homeRows = self.homeRows or 2
 
-    data.turn = data.turn or -1
+    self.turn = self.turn or -1
 
-    for x=1, data.cols do
-        new.grid[x] = {}
-        for y=1, data.rows do
-            new.grid[x][y] = {}
+    for x=1, self.cols do
+        self.grid[x] = {}
+        for y=1, self.rows do
+            self.grid[x][y] = {}
         end
     end
 
-    return new
+    if self.players then
+        for i, p in ipairs(self.players) do
+            p:setBoard(self)
+        end
+    end
+
+    return self
+end
+
+function board:isActivePlayer(player)
+    local i = table.find(self.players, player)
+    return self.turn%2==i%2
+end
+
+function board:getOpponent(player)
+    for i, p in ipairs(self.players) do
+        if p~=player then
+            return p
+        end
+    end
 end
 
 local particles = {
@@ -57,7 +76,7 @@ local white, black = {0.8,0.8,0.8}, {0.2,0.2,0.2}
 local gridSize = 50
 local highlightBorder = 2
 
-local selectedPiece, dragWithPiece
+local selectedPiece, dragWithPiece, hoverAttackHighlight
 
 function board:getSelectedPiece() return selectedPiece end
 
@@ -67,9 +86,19 @@ function board:createEffectAt(effect, x, y)
     particles[effect]:emit(1)
 end
 
+function board:getBoardOrigin()
+    return  self.pos[1]-self.cols/2*gridSize*self.scale+self.offset[1]*self.scale,
+            self.pos[2]-self.rows/2*gridSize*self.scale+self.offset[2]*self.scale
+end
+
+function board:getTileAbsPos(x, y)
+    local xPos, yPos = self:getBoardOrigin()
+    return  gridSize*self.scale*(x-0.5)+xPos,
+            gridSize*self.scale*(y-0.5)+yPos
+end
+
 function board:draw()
-    xPos = self.pos[1]-self.cols/2*gridSize*self.scale+self.offset[1]*self.scale
-    yPos = self.pos[2]-self.rows/2*gridSize*self.scale+self.offset[2]*self.scale
+    local xPos, yPos = self:getBoardOrigin()
 
     if self.mouseOver then
         love.graphics.rectangle("fill", xPos-highlightBorder*self.scale, yPos-highlightBorder*self.scale, gridSize*self.cols*self.scale+highlightBorder*self.scale*2, gridSize*self.rows*self.scale+highlightBorder*self.scale*2)
@@ -101,6 +130,32 @@ function board:draw()
         gridSize*self.cols*self.scale,
         gridSize*self.homeRows*self.scale
     )
+    if self.highlightSpawnFor then
+        for x=1, self.cols do
+            for y=1, self.rows do
+                local isHover = self.hoverTile[1]==x and self.hoverTile[2]==y
+                love.graphics.setColor(0, 0, 1, isHover and 1 or 0.35)
+                if self:canSummonAt(self.highlightSpawnFor, nil, x, y) then
+                    love.graphics.rectangle("fill", gridSize*self.scale*(x-0.9)+xPos, gridSize*self.scale*(y-0.9)+yPos, gridSize*self.scale*0.8, gridSize*self.scale*0.8)
+                end
+            end
+        end
+    end
+
+    if self.hoverTile[1] and self.hoverTile[2] and hoverAttackHighlight then
+        local x, y = unpack(self.hoverTile)
+        if not selectedPiece or selectedPiece and selectedPiece:canTravelTo(x,y) then
+            local coords = hoverAttackHighlight
+            love.graphics.setColor(1, 0, 0, 0.5)
+            love.graphics.setLineWidth(self.scale*2.5)
+            for i=1, #coords, 2 do
+                local x, y = coords[i], coords[i+1]
+                if self:isWithinBounds(x, y) then
+                    love.graphics.rectangle("line", gridSize*self.scale*(x-0.925)+xPos, gridSize*self.scale*(y-0.925)+yPos, gridSize*self.scale*0.85, gridSize*self.scale*0.85)
+                end
+            end
+        end
+    end
 
     if selectedPiece then
         local p = selectedPiece.pos
@@ -121,6 +176,7 @@ function board:draw()
                 end
             end
         end
+
         local r = selectedPiece.attackRange
         if p and r then
             for y=math.max(1, p[2]-r), math.min(p[2]+r, self.rows) do
@@ -191,12 +247,30 @@ end
 
 local mousePressedX, mousePressedY
 
-function board:canEndTurn() return true end -- TODO
+function board:canEndTurn(player)
+    return player and self:isActivePlayer(player) and player:canEndTurn()
+end
 
-function board:endTurn()
-    if not self:canEndTurn() then return end
+function board:endTurn(activeplayer)
+    if not self:canEndTurn(activeplayer) then return end
     self.turn = self.turn+1
-    print(self.turn)
+    local other = self:getOpponent(activeplayer)
+    if other then
+        other:startTurn()
+    else
+        print("No opponent, skipping turn")
+        self.turn = self.turn+1
+        activeplayer:startTurn()
+    end
+end
+
+function board:setHighlightDamageSpawnFor(Ptype, targetX, targetY)
+    local piece = require'pieces'.getTypeData(Ptype)
+    hoverAttackHighlight = piece.getSpawnSplash and {piece:getSpawnSplash(targetX, targetY)}
+end
+
+function board:setHighlightSpawnFor(player)
+    self.highlightSpawnFor = player
 end
 
 function board:isWithinBounds(x, y)
@@ -204,6 +278,7 @@ function board:isWithinBounds(x, y)
 end
 
 function board:getRelativeMouse(x, y)
+    if not x or not y then return end
     return  x-self.pos[1]+self.cols/2*gridSize*self.scale-self.offset[1]*self.scale,
             y-self.pos[2]+self.rows/2*gridSize*self.scale-self.offset[2]*self.scale
 end
@@ -214,27 +289,34 @@ function board:screenPosIsOverBoard(x,y)
 end
 
 function board:relativePosIsOverBoard(relativeX, relativeY)
+    if not relativeX or not relativeY then return end
     return relativeX>0 and relativeY>0
         and relativeX<self.cols*gridSize*self.scale
         and relativeY<self.rows*gridSize*self.scale
 end
 
 function board:getGridCoordAtRelativePos(relativeX, relativeY)
+    if not relativeX or not relativeY then return end
     return math.ceil(relativeX/(gridSize*self.scale)), math.ceil(relativeY/(gridSize*self.scale))
 end
 
 function board:getGridCoordAtPos(posX, posY)
+    if not posX or not posY then return end
     return self:getGridCoordAtRelativePos(self:getRelativeMouse(posX, posY))
 end
 
-function board:mousemoved(x, y, xDelta, yDelta, istouch)
+function board:mousemoved(x, y, xDelta, yDelta, istouch, intercepted)
     if mousePressedX and mousePressedY then
         self.offset[1], self.offset[2] = x/self.scale-mousePressedX, y/self.scale-mousePressedY
     else
         local relativeX, relativeY = self:getRelativeMouse(x, y)
         self.mouseOver = self:relativePosIsOverBoard(relativeX, relativeY)
         if self.mouseOver then
+            local oldX, oldY = self.hoverTile[1], self.hoverTile[2]
             self.hoverTile[1], self.hoverTile[2] = self:getGridCoordAtRelativePos(relativeX, relativeY)
+            if not intercepted and selectedPiece and not (oldX==self.hoverTile[1] and oldY==self.hoverTile[2]) then
+                hoverAttackHighlight = selectedPiece.attackAreaPreview and {selectedPiece:attackAreaPreview(self.hoverTile[1], self.hoverTile[2])}
+            end
         else
             self.hoverTile[1], self.hoverTile[2] = nil, nil
         end
@@ -254,23 +336,27 @@ function board:getLivingPieceAt(x, y)
     end
 end
 
-function board:mousepressed(x, y, button, istouch, presses)
+function board:mousepressed(x, y, button, istouch, presses, intercepted)
     self.mouseOver = self:screenPosIsOverBoard(x,y)
+    if intercepted then
+        selectedPiece, dragWithPiece, selectedPiece, dragWithPiece = nil, nil, nil, nil
+    end
     if self.mouseOver then
-        local pieces = self:getLivingPieceAt(self.hoverTile[1], self.hoverTile[2])
+        local pieces = not intercepted and self:getLivingPieceAt(self.hoverTile[1], self.hoverTile[2])
         if pieces then
             selectedPiece, dragWithPiece = pieces, pieces
         else
             mousePressedX, mousePressedY = x/self.scale-self.offset[1], y/self.scale-self.offset[2]
             selectedPiece, dragWithPiece = nil, nil
         end
+        hoverAttackHighlight = nil
     end
 end
 
-function board:mousereleased(x, y, button, istouch, presses)
+function board:mousereleased(x, y, button, istouch, presses, intercepted)
     mousePressedX, mousePressedY = nil, nil
     if self.mouseOver then
-        self.mouseOver = self:screenPosIsOverBoard(x,y)
+        self.mouseOver = not intercepted and self:screenPosIsOverBoard(x,y)
     end
     if dragWithPiece and self.mouseOver then
         local tX, tY = self:getGridCoordAtPos(x, y)
@@ -278,6 +364,7 @@ function board:mousereleased(x, y, button, istouch, presses)
             self:attackWithPiece(dragWithPiece, tX, tY)
         end
     end
+    hoverAttackHighlight = nil
     dragWithPiece = nil
 end
 
@@ -297,14 +384,30 @@ function board:deleteFrom(piece)
     end
 end
 
-function board:summonAt(pType, x, y)
+function board:canSummon(player, pType)
+    if not pType then return end
+    -- TODO player turn check
+    return player:getMana()>=(require'pieces'.getTypeData(pType).cost or math.huge)
+end
+
+function board:canSummonAt(player, pType, x, y)
+    if self:getLivingPieceAt(x, y) then return end
+    if self.rows-self.homeRows>=y then return end -- TODO enemy check
+    return true
+end
+
+function board:summonAt(player, pType, x, y)
+    if not self:canSummon(player, pType) or not self:canSummonAt(player, pType, x, y) then return end
+    if not player:takeMana(require'pieces'.getTypeData(pType).cost) then return end
     local piece = require'pieces'.new{
         type = pType,
         board = self,
+        player = player,
         pos = {x, y},
         summonTurn = self.turn,
     }
     table.insert(self.grid[x][y], piece)
+    return true
 end
 
 function board:moveTo(piece, x, y)
@@ -333,15 +436,14 @@ function board:attack(piece, x, y)
 end
 
 function board:movePiece(piece, x, y)
-    if not piece then return end
+    if not piece or not x or not y then return end
     if not piece:canTravelTo(x, y) then return end
-    if piece.onMoveTo then
-        piece:onMoveTo(x, y)
-    end
+    piece:onMoveTo(x, y)
     if piece.move then
         return piece:move(x, y)
     else
         if self:getLivingPieceAt(x, y) then
+            piece:onAttackTo(x, y)
             self:attack(piece, x, y)
         end
         return self:moveTo(piece, x, y)
@@ -352,6 +454,7 @@ function board:attackWithPiece(piece, x, y)
     if not piece then return end
     if not piece:canAttackTo(x, y) then return end
     if self:getLivingPieceAt(x, y) then
+        piece:onAttackTo(x, y)
         if piece.getAttackSplash then
             local coords = {piece:getAttackSplash(x, y)}
             for i=1, #coords, 2 do

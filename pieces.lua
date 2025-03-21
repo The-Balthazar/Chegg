@@ -61,6 +61,19 @@ local function nearestDiagonalAttack(self, targetX, targetY)
     return true
 end
 
+local function range1estimate(self, targetX, targetY)
+    return
+        targetX+1,targetY+1, targetX+1,targetY+0, targetX+1,targetY-1,
+        targetX+0,targetY+1,                      targetX+0,targetY-1,
+        targetX-1,targetY+1, targetX-1,targetY+0, targetX-1,targetY-1
+end
+
+local function cardinal1estimate(self, targetX, targetY)
+    return
+        targetX+1,targetY+0, targetX+0,targetY+1,
+        targetX+0,targetY-1, targetX-1,targetY+0
+end
+
 local function FX_explosion(self, targetX, targetY)
     local board = self.board
     board:createEffectAt('explosion', targetX, targetY)
@@ -69,7 +82,7 @@ end
 local piecetypes = {
     king = {
         name = 'King',
-        desc = 'A players avatar, death constitutes a game loss for its controller. Its normally free move costs 1.\n\nIt can move to or attack any space within 1 range.',
+        desc = 'The players avatar, death constitutes a game loss for its controller.\n\nIts normally free move costs 1.\n\nIt can move to or attack any space within 1 range.',
         cost = 0,
         moveRange = 1,
         attackRange = 1,
@@ -86,7 +99,8 @@ local piecetypes = {
         attackEffect = function(self, targetX, targetY)
             local board = self.board
             board:createEffectAt('swipe', targetX, targetY)
-        end
+        end,
+        attackAreaPreview = range1estimate,
     },
     zombie = {
         name = 'Zombie',
@@ -112,7 +126,8 @@ local piecetypes = {
         attackEffect = function(self, targetX, targetY)
             local board = self.board
             board:createEffectAt('scratchred', targetX, targetY)
-        end
+        end,
+        attackAreaPreview = cardinal1estimate,
     },
     creeper = {
         name = 'Creeper',
@@ -142,6 +157,12 @@ local piecetypes = {
                     self.pos[1], self.pos[2]+1,
                     self.pos[1], self.pos[2]-1
         end,
+        attackAreaPreview = function(self, targetX, targetY)
+            return
+                targetX+1,targetY+1, targetX+1,targetY+0, targetX+1,targetY-1,
+                targetX+0,targetY+1, targetX,  targetY,   targetX+0,targetY-1,
+                targetX-1,targetY+1, targetX-1,targetY+0, targetX-1,targetY-1
+        end,
     },
     pig = {
         name = 'Pig',
@@ -158,10 +179,10 @@ local piecetypes = {
         quadM = genQuad(5, 3),
         image = spriteAtlas,
         onSummon = function(self)
-            print("TODO draw")
+            self.player:draw()
         end,
         onKill = function(self, instigator)
-            print("TODO draw")
+            self.player:draw()
         end,
     },
     rabbit = {
@@ -182,12 +203,13 @@ local piecetypes = {
         end,
         onMoveTo = function(self, targetX, targetY)
             if self.board:getLivingPieceAt((self.pos[1]+targetX)/2, (self.pos[2]+targetY)/2) then
-                print("TODO draw")
+                self.player:draw()
             end
         end,
     },
     pufferfish = {
         name = 'Pufferfish',
+        name_short = 'P-fish',
         desc = 'Pufferfish can move 1 in any cardinal direction, and can attack all diagonally adjacent tiles simultaniously.',
         cost = 2,
         deck = true,
@@ -214,7 +236,12 @@ local piecetypes = {
         attackEffect = function(self, targetX, targetY)
             local board = self.board
             board:createEffectAt('pfish', unpack(self.pos))
-        end
+        end,
+        attackAreaPreview = function(self, targetX, targetY)
+            return
+                targetX+1,targetY+1, targetX+1,targetY-1,
+                targetX-1,targetY+1, targetX-1,targetY-1
+        end,
     },
     golem = {
         name = 'Golem',
@@ -242,7 +269,8 @@ local piecetypes = {
         attackEffect = function(self, targetX, targetY)
             local board = self.board
             board:createEffectAt('swipe', targetX, targetY)
-        end
+        end,
+        attackAreaPreview = cardinal1estimate,
     },
     frog = {
         name = 'Frog',
@@ -275,9 +303,20 @@ local piecetypes = {
             board:moveTo(target, tX-math.clamp(rX, -mX, mX), tY-math.clamp(rY, -mY, mY))
             return true
         end,
+        -- attackAreaPreview = function(self, targetX, targetY)
+        --     local coords = {}
+        --     for x=targetX-2, targetX+2 do
+        --     end
+        --     for y=targetY-2, targetY+2 do
+        --             table.insert(coords, x)
+        --             table.insert(coords, y)
+        --     end
+        --     return unpack(coords)
+        -- end,
     },
     skeleton = {
         name = 'Skeleton',
+        name_short = 'Skelly',
         desc = 'Skeletons can move 1 in any cardinal direction, and can attack the nearest creature down a given diagonal, up to 3 spaces away.',
         cost = 3,
         deck = true,
@@ -295,7 +334,16 @@ local piecetypes = {
         attackEffect = function(self, targetX, targetY)
             local board = self.board
             board:createEffectAt('hit', targetX, targetY)
-        end
+        end,
+        attackAreaPreview = function(self, targetX, targetY)
+            return
+                targetX+3,targetY+3, targetX+3,targetY-3,
+                targetX+2,targetY+2, targetX+2,targetY-2,
+                targetX+1,targetY+1, targetX+1,targetY-1,
+                targetX-1,targetY+1, targetX-1,targetY-1,
+                targetX-2,targetY+2, targetX-2,targetY-2,
+                targetX-3,targetY+3, targetX-3,targetY-3
+        end,
     },
     blaze = {
         name = 'Blaze',
@@ -319,7 +367,14 @@ local piecetypes = {
         attackEffect = function(self, targetX, targetY)
             local board = self.board
             board:createEffectAt('fireball', targetX, targetY)
-        end
+        end,
+        attackAreaPreview = function(self, targetX, targetY)
+            return
+                targetX+2,targetY+0, targetX+0,targetY+2,
+                targetX+1,targetY+0, targetX+0,targetY+1,
+                targetX+0,targetY-1, targetX-1,targetY+0,
+                targetX+0,targetY-2, targetX-2,targetY+0
+        end,
     },
     phantom = {
         name = 'Phantom',
@@ -331,7 +386,6 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
-        attackMoveCost = 1,
         attackMoveOnly = true,
         quad = genQuad(1, 2),
         quadM = genQuad(7, 4),
@@ -341,9 +395,22 @@ local piecetypes = {
             local x, y = targetX%2, targetY%2
             return x==y
         end,
+        attackAreaPreview = function(self, targetX, targetY)
+            local coords = {}
+            for x=targetX-2, targetX+2 do
+                for y=targetY-2, targetY+2 do
+                    if (y%2)==(x%2) then
+                        table.insert(coords, x)
+                        table.insert(coords, y)
+                    end
+                end
+            end
+            return unpack(coords)
+        end,
     },
     farlander = {
         name = 'Enderman',
+        name_short = 'E-man',
         desc = 'Endermen get no free move, but can swap places within any creature besides a king that shares a row or column with it, and isn\'t within attack range. It can attack any of the 8 adjacent spaces.',
         cost = 4,
         deck = true,
@@ -377,6 +444,7 @@ local piecetypes = {
 
             return true
         end,
+        attackAreaPreview = range1estimate,
     },
     slime = {
         name = 'Slime',
@@ -388,7 +456,6 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
-        attackMoveCost = 1,
         attackMoveOnly = true,
         quad = genQuad(3, 2),
         quadM = genQuad(1, 5),
@@ -398,6 +465,12 @@ local piecetypes = {
             local x, y = math.abs(self.pos[1]-targetX), math.abs(self.pos[2]-targetY)
             return (x+y==4 or x+y==2 and x~=y)
         end,
+        attackAreaPreview = function(self, targetX, targetY)
+            return
+                targetX+2,targetY+2, targetX+2,targetY+0, targetX+2,targetY-2,
+                targetX+0,targetY+2,                      targetX+0,targetY-2,
+                targetX-2,targetY+2, targetX-2,targetY+0, targetX-2,targetY-2
+        end,
     },
     box = {
         name = 'Shulker',
@@ -405,9 +478,8 @@ local piecetypes = {
         cost = 4,
         deck = true,
         moveRange = 2,
-        -- attackRange = 0,
+        moveCost = 0,
         attackCost = 1,
-        attackMoveCost = 1,
         attackMoveOnly = true,
         quad = genQuad(4, 2),
         quadM = genQuad(3, 5),
@@ -456,7 +528,7 @@ local piecetypes = {
     -- },
     cat = {
         name = 'Cat',
-        desc = 'Cats don\'t move or attack; instead each grant its controller 1 extra resource each turn.',
+        desc = 'Cats don\'t move or attack; instead each grant its controller 1 extra mana each turn.',
         cost = 5,
         deck = true,
         moveRange = 0,
@@ -465,6 +537,9 @@ local piecetypes = {
         image = spriteAtlas,
         canTravelTo = nope,
         canAttackTo = nope,
+        onStartTurn = function(self)
+            self.player:takeMana(-1)
+        end,
     },
     sniffer = {
         name = 'Sniffer',
@@ -481,15 +556,20 @@ local piecetypes = {
         quadM = genQuad(6, 5),
         image = spriteAtlas,
         onSummon = function(self)
-            print("TODO draw 2 from enemies deck")
+            local enemy = self.board:getOpponent(self.player)
+            if enemy then
+                self.player:addToHand(enemy:mill())
+                self.player:addToHand(enemy:mill())
+            end
         end,
         onKill = function(self, instigator)
-            print("TODO discard 2")
+            self.player:discardRandom()
+            self.player:discardRandom()
         end,
     },
     wither = {
         name = 'Wither',
-        desc = 'On summon the Wither explodes, killing anything within 1 range.\n\nIt can move 1 in any direction, and can attack the nearest creature down a given cardinal direction, up to 3 spaces away. This attack costs 2 mana, and inflicts splash damage to the 4 adjacent tiles.',
+        desc = 'On summon the Wither explodes, killing anything within 1 range.\n\nIt can move 1 in any direction, and can attack the nearest creature down a given cardinal direction, up to 3 spaces away. This attack costs 2, and inflicts splash damage to the 4 adjacent tiles.',
         cost = 6,
         deck = true,
         moveRange = 1,
@@ -503,6 +583,7 @@ local piecetypes = {
         quadM = genQuad(7, 5),
         quadA = genQuad(8, 5),
         image = spriteAtlas,
+        getSpawnSplash = range1estimate,
         getAttackSplash = function(self, targetX, targetY)
             return  targetX, targetY,
                     targetX+1, targetY,
@@ -517,12 +598,24 @@ local piecetypes = {
                 for y=-1, 1 do
                     if not (x==0 and y==0) then
                         board:createEffectAt('explosion', self.pos[1]+x, self.pos[2]+y)
-                        for i, piece in ipairs(board:getPiecesAt(self.pos[1]+x, self.pos[2]+y)) do
-                            piece:kill(self)
+                        local grid = board:getPiecesAt(self.pos[1]+x, self.pos[2]+y)
+                        if grid then
+                            for i, piece in ipairs(grid) do
+                                piece:kill(self)
+                            end
                         end
                     end
                 end
             end
+        end,
+        attackAreaPreview = function(self, targetX, targetY)
+            return
+                targetX+3,targetY+0, targetX+0,targetY+3,
+                targetX+2,targetY+0, targetX+0,targetY+2,
+                targetX+1,targetY+0, targetX+0,targetY+1,
+                targetX+0,targetY-1, targetX-1,targetY+0,
+                targetX+0,targetY-2, targetX-2,targetY+0,
+                targetX+0,targetY-3, targetX-3,targetY+0
         end,
     },
 }
@@ -532,44 +625,85 @@ piece.__index = piece
 
 function piece.getTypeData(t) return piecetypes[t] end
 
-function piece.new(data)
-    local pType = data.type or 'error'
+function piece:new()
+    local new = setmetatable(self, piece)
+
+    local pType = self.type or 'error'
     local typeData = piecetypes[pType]
 
-    data.getAttackSplash = typeData.getAttackSplash
-    data.moveRange = typeData.moveRange
-    data.attackMoveHighlightColour = typeData.attackMoveHighlightColour
-    data.attackHighlightColour = typeData.attackHighlightColour
-    data.attackRange = typeData.attackRange
-    data.attackEffect = typeData.attackEffect
-    data.move = typeData.move
-    data.onMoveTo = typeData.onMoveTo
-    data.attack = typeData.attack
-    data.typeData = typeData
-
-    local new = setmetatable(data, piece)
+    self.getAttackSplash = typeData.getAttackSplash
+    self.moveRange = typeData.moveRange
+    self.attackMoveHighlightColour = typeData.attackMoveHighlightColour
+    self.attackHighlightColour = typeData.attackHighlightColour
+    self.attackAreaPreview = typeData.attackAreaPreview
+    self.attackRange = typeData.attackRange
+    self.attackEffect = typeData.attackEffect
+    self.move = typeData.move
+    self.attack = typeData.attack
+    self.typeData = typeData
+    self.onStartTurn = typeData.onStartTurn
 
     if typeData.onSummon then
-        typeData.onSummon(new)
+        typeData.onSummon(self)
     end
 
-    return new
+    self.player:insertSummon(self)
+
+    return self
+end
+
+function piece:canMove()
+    return (self.typeData.moveCost and self.typeData.moveCost<=self.player.mana) and (not self.lastMoved or self.lastMoved<self.board.turn) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
+end
+
+function piece:canDash()
+    return (self.typeData.dashCost and self.typeData.dashCost<=self.player.mana) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
+end
+
+function piece:canAttack()
+    return (self.typeData.attackCost and self.typeData.attackCost<=self.player.mana) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
 end
 
 function piece:canTravelTo(targetX, targetY)
     if self.dead then return end
+    if not self.board:isActivePlayer(self.player) then return end
     if self:hasSummoningSickness() then return end
+    if not (self:canMove() or self:canDash()) then return end
     if self.pos[1]==targetX and self.pos[2]==targetY then return end
+    if not self:canAttack() and self.board:getLivingPieceAt(targetX, targetY) then return end
     return self.typeData.canTravelTo(self, targetX, targetY)
+end
+
+function piece:onMoveTo(targetX, targetY)
+    if self.typeData.onMoveTo then
+        self.typeData.onMoveTo(self, targetX, targetY)
+    end
+    if self:canMove() then
+        self.player:takeMana(self.typeData.moveCost)
+        self.lastMoved = self.board.turn
+    elseif self:canDash() then
+        self.player:takeMana(self.typeData.dashCost)
+        self.lastSpecialed = self.board.turn
+    end
 end
 
 function piece:canAttackTo(targetX, targetY)
     if self.dead then return end
+    if not self.board:isActivePlayer(self.player) then return end
     if self:hasSummoningSickness() then return end
     if self.typeData.attackMoveOnly then return end
+    if not (self:canAttack()) then return end
     if not self.typeData.attackRange or self.typeData.attackRange==0 then return end
     if self.pos[1]==targetX and self.pos[2]==targetY then return end
     return self.typeData.canAttackTo and self.typeData.canAttackTo(self, targetX, targetY)
+end
+
+function piece:onAttackTo(targetX, targetY)
+    if self.typeData.onAttackTo then
+        self.typeData.onAttackTo(self, targetX, targetY)
+    end
+    self.player:takeMana(self.typeData.attackCost)
+    self.lastSpecialed = self.board.turn
 end
 
 function piece:update(delta)
@@ -592,12 +726,26 @@ end
 function piece:kill(instigator)
     if self.dead then return end
     if self.typeData.onKill then self.typeData.onKill(self, instigator) end
+    if self.player then
+        self.player:removeSummon(self)
+    end
     self.dead = 0
 end
+
+local summonSickSpiral = genQuad(9, 7)
 
 function piece:draw(boardXPos, boardYPos, gridXPos, gridYPos)
     -- if not self.pos then return end
     love.graphics.draw(spriteAtlas, piecetypes[self.type].quad, gridXPos, gridYPos+self.board.scale*spriteSize*0.25, self.rotation or 0, self.board.scale, self.board.scale, spriteSize/2, spriteSize*0.75)
+    if self:hasSummoningSickness() and self:isAlive() then
+        love.graphics.setBlendMode'add'
+        local scale = self.board.scale+self.board.scale*0.25*math.sin(love.timer.getTime()+(self.pos[1]%self.pos[2]))
+        local scale2 = self.board.scale+self.board.scale*0.25*math.sin(love.timer.getTime()+0.8+(self.pos[1]%self.pos[2]))
+        local rot = love.timer.getTime()+(self.pos[1]%self.pos[2])
+        love.graphics.draw(spriteAtlas, summonSickSpiral, gridXPos, gridYPos, -rot, scale, scale, spriteSize/2, spriteSize/2)
+        love.graphics.draw(spriteAtlas, summonSickSpiral, gridXPos, gridYPos, -rot*1.2, scale2, scale2, spriteSize/2, spriteSize/2)
+        love.graphics.setBlendMode'alpha'
+    end
 end
 
 function piece:getCurrentTurn() return self.board.turn end
