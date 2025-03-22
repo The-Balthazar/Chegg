@@ -98,6 +98,28 @@ function preview:draw()
             love.graphics.printf(('Turn: %d - %s'):lower():format(math.max(0,math.ceil(count/2)), orderTurn:lower()), text, x-5, y-5, 200, 'left', 0, 2, 2)
         end
     end
+    if self.getDeckSize then
+        local deck = self.getDeckSize()
+        local width, height = 140, 80
+        local x, y = love.graphics.getWidth()-width, love.graphics.getHeight()-height
+        local king = require'pieces'.getTypeData'king'
+
+        for i=1, deck do
+            love.graphics.setColor(1,1,1)
+            love.graphics.rectangle("fill", x, y, width, height)
+            love.graphics.setColor(0.5,0,0.5)
+            love.graphics.rectangle("fill", x+5, y+5, width-10, height-10)
+            love.graphics.setColor(0,0,0)
+            love.graphics.setLineWidth(2)
+            love.graphics.rectangle("line", x, y, width, height)
+            love.graphics.rectangle("line", x+5, y+5, width-10, height-10)
+            love.graphics.setColor(1,1,1)
+            y=y-10
+        end
+        if deck~=0 then
+            love.graphics.draw(king.image, king.quad, x+15, y+80, -math.pi/2, 1.25, 2)
+        end
+    end
     if self.getHand then
         local hand = self.getHand()
         local width, height = 140, 140

@@ -60,6 +60,11 @@ function player:draw()
     return true
 end
 
+function player:getDeckSize()
+    if not self.deck then return 0 end
+    return #self.deck
+end
+
 function player:discardRandom()
     if not self.hand or not self.hand[1] then return end
     table.remove(self.hand, love.math.random(1, #self.hand))
