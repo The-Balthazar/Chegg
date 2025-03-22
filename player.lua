@@ -29,6 +29,19 @@ function player:new()
     return self
 end
 
+function player:defeat(instigator)
+    for i=1, #self.hand do
+        self:discardRandom()
+    end
+    self.mana = 0
+    for i=#self.summons, 1, -1 do
+        local summon = self.summons[i]
+        summon:kill()
+    end
+    self.dead = true
+    self.board:endTurn(self)
+end
+
 function player:setBoard(board)
     if not board then return end
     self.board = board
@@ -41,6 +54,7 @@ function player:shuffle()
 end
 
 function player:draw()
+    if self.dead then return end
     if not self.hand or not self.deck or not self.deck[1] then return end
     table.insert(self.hand, table.remove(self.deck))
     return true
@@ -52,6 +66,7 @@ function player:discardRandom()
 end
 
 function player:addToHand(item)
+    if self.dead then return end
     if not self.hand or not item then return end
     table.insert(self.hand, item)
     return true
@@ -63,7 +78,7 @@ function player:mill()
 end
 
 function player:canEndTurn()
-    return self.summons and self.summons[1]
+    return self.summons and self.summons[1] or self.dead
 end
 
 function player:insertSummon(summon)
@@ -75,6 +90,7 @@ function player:removeSummon(summon)
 end
 
 function player:startTurn()
+    if self.dead then return true end
     local turnNo = self.board.turn
     if turnNo<=0 then return true end
     if math.ceil(turnNo/2)==1 then
@@ -96,6 +112,7 @@ function player:startTurn()
 end
 
 function player:takeMana(count)
+    if self.dead then return end
     if count>self.mana then return end
     self.mana = self.mana-count
     return true

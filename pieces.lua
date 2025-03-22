@@ -101,6 +101,9 @@ local piecetypes = {
             board:createEffectAt('swipe', targetX, targetY)
         end,
         attackAreaPreview = range1estimate,
+        onKill = function(self, instigator)
+            self.player:defeat(instigator)
+        end,
     },
     zombie = {
         name = 'Zombie',
@@ -742,11 +745,11 @@ end
 
 function piece:kill(instigator)
     if self.dead then return end
+    self.dead = 0
     if self.typeData.onKill then self.typeData.onKill(self, instigator) end
     if self.player then
         self.player:removeSummon(self)
     end
-    self.dead = 0
 end
 
 local summonSickSpiral = genQuad(9, 7)
