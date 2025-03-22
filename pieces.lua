@@ -663,11 +663,11 @@ function piece:new()
     self.typeData = typeData
     self.onStartTurn = typeData.onStartTurn
 
+    self.player:insertSummon(self)
+
     if typeData.onSummon then
         typeData.onSummon(self)
     end
-
-    self.player:insertSummon(self)
 
     return self
 end
