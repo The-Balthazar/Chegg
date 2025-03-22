@@ -684,6 +684,10 @@ function piece:canAttack()
     return (self.typeData.attackCost and self.typeData.attackCost<=self.player.mana) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
 end
 
+function piece:canSpecial()
+    return ((self.typeData.dashCost and self.typeData.dashCost<=self.player.mana) or (self.typeData.attackCost and self.typeData.attackCost<=self.player.mana)) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
+end
+
 function piece:canTravelTo(targetX, targetY)
     if self.dead then return end
     if not self.board:isActivePlayer(self.player) then return end
@@ -754,9 +758,14 @@ end
 
 local summonSickSpiral = genQuad(9, 7)
 
+local hsvcolour = love.graphics.newShader'hsvcolour.vs'
+
 function piece:draw(boardXPos, boardYPos, gridXPos, gridYPos)
-    -- if not self.pos then return end
+    love.graphics.setShader(hsvcolour)
+    love.graphics.setColor(1, self:canMove() and 1 or self:canSpecial() and 0.5 or 0, 1)
     love.graphics.draw(spriteAtlas, piecetypes[self.type].quad, gridXPos, gridYPos+self.board.scale*spriteSize*0.25, self.rotation or 0, self.board.scale, self.board.scale, spriteSize/2, spriteSize*0.75)
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setShader()
     if self:hasSummoningSickness() and self:isAlive() then
         love.graphics.setBlendMode'add'
         local scale = self.board.scale+self.board.scale*0.25*math.sin(love.timer.getTime()+(self.pos[1]%self.pos[2]))
