@@ -34,6 +34,7 @@ function love.load()
         end,
         canEndTurn = function() return activeboard:canEndTurn(activeplayer) end,
         getHand = function() return activeplayer:getHand() end,
+        getDeckSize = function() return activeplayer:getDeckSize() end,
     }
 end
 
