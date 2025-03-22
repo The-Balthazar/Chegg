@@ -673,25 +673,28 @@ function piece:new()
 end
 
 function piece:canMove()
+    if self:hasSummoningSickness() then return end
     return (self.typeData.moveCost and self.typeData.moveCost<=self.player.mana) and (not self.lastMoved or self.lastMoved<self.board.turn) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
 end
 
 function piece:canDash()
+    if self:hasSummoningSickness() then return end
     return (self.typeData.dashCost and self.typeData.dashCost<=self.player.mana) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
 end
 
 function piece:canAttack()
+    if self:hasSummoningSickness() then return end
     return (self.typeData.attackCost and self.typeData.attackCost<=self.player.mana) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
 end
 
 function piece:canSpecial()
+    if self:hasSummoningSickness() then return end
     return ((self.typeData.dashCost and self.typeData.dashCost<=self.player.mana) or (self.typeData.attackCost and self.typeData.attackCost<=self.player.mana)) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
 end
 
 function piece:canTravelTo(targetX, targetY)
     if self.dead then return end
     if not self.board:isActivePlayer(self.player) then return end
-    if self:hasSummoningSickness() then return end
     if not (self:canMove() or self:canDash()) then return end
     if self.pos[1]==targetX and self.pos[2]==targetY then return end
     if not self:canAttack() and self.board:getLivingPieceAt(targetX, targetY) then return end
@@ -714,7 +717,6 @@ end
 function piece:canAttackTo(targetX, targetY)
     if self.dead then return end
     if not self.board:isActivePlayer(self.player) then return end
-    if self:hasSummoningSickness() then return end
     if self.typeData.attackMoveOnly then return end
     if not (self:canAttack()) then return end
     if not self.typeData.attackRange or self.typeData.attackRange==0 then return end
@@ -762,7 +764,8 @@ local hsvcolour = love.graphics.newShader'hsvcolour.vs'
 
 function piece:draw(boardXPos, boardYPos, gridXPos, gridYPos)
     love.graphics.setShader(hsvcolour)
-    love.graphics.setColor(1, self:canMove() and 1 or self:canSpecial() and 0.5 or 0, 1)
+    local v = self:canMove() and 1 or self:canSpecial() and 0.5 or 0
+    love.graphics.setColor(1, v, 0.5+0.5*v)
     love.graphics.draw(spriteAtlas, piecetypes[self.type].quad, gridXPos, gridYPos+self.board.scale*spriteSize*0.25, self.rotation or 0, self.board.scale, self.board.scale, spriteSize/2, spriteSize*0.75)
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setShader()
