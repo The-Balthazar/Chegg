@@ -346,7 +346,7 @@ function board:mousepressed(x, y, button, istouch, presses, intercepted)
         if pieces then
             selectedPiece, dragWithPiece = pieces, pieces
         else
-            mousePressedX, mousePressedY = x/self.scale-self.offset[1], y/self.scale-self.offset[2]
+            mousePressedX, mousePressedY = (not intercepted and x/self.scale-self.offset[1]), (not intercepted and y/self.scale-self.offset[2])
             selectedPiece, dragWithPiece = nil, nil
         end
         hoverAttackHighlight = nil
