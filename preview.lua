@@ -123,30 +123,40 @@ function preview:draw()
     if self.getHand then
         local hand = self.getHand()
         local width, height = 140, 140
+        local squeeze
         local marginX = 5
 
         if hand[1] then
-            local x, y = love.graphics.getWidth()/2-(#hand/2*width), love.graphics.getHeight()-height
+            local handwidth = #hand*width
+            if handwidth>1220 then
+                handwidth = 1220
+                squeeze = handwidth/#hand
+            end
+
+            local x, y = love.graphics.getWidth()/2-handwidth/2, love.graphics.getHeight()-height
 
             if handPressIndex and not handHoverIndex and self.board then
                 local mx, my = love.mouse.getPosition()
                 local hoverBoard = self.board:screenPosIsOverBoard(mx, my)
                 love.graphics.setLineWidth(self.board.scale*2.5)
                 local tx, ty = self.board:getGridCoordAtPos(mx, my)
+                local x = x+(handPressIndex-1)*(squeeze or width)+width/2
                 if hoverBoard and self.board:canSummonAt(self.player, hand[handPressIndex], tx, ty) then
                     love.graphics.setColor(0, 0, 1, 1)
-                    love.graphics.line(x+(handPressIndex-0.5)*width, y+height/2, self.board:getTileAbsPos(tx, ty))
+                    love.graphics.line(x, y+height/2, self.board:getTileAbsPos(tx, ty))
                 else
                     love.graphics.setColor(1, 1, 1, 1)
-                    love.graphics.line(x+(handPressIndex-0.5)*width, y+height/2, mx, my)
+                    love.graphics.line(x, y+height/2, mx, my)
                 end
             end
 
             for i, v in ipairs(hand) do
                 local item = require'pieces'.getTypeData(v)
-                local y = handHoverIndex==i and y-20 or y
+                local y = (handHoverIndex==i or handPressIndex==i) and y-(squeeze and 40 or 20) or y
 
-                x = x+marginX
+                if not squeeze then
+                    x = x+marginX
+                end
                 local width = width-marginX-marginX
 
                 love.graphics.setColor(1,1,1)
@@ -169,8 +179,11 @@ function preview:draw()
                 end
                 love.graphics.setColor(0,0,0)
                 love.graphics.printf(item.cost, text, x+width-20, y+0, 20, 'center', 0, 2, 2)
-
-                x = x+width+marginX
+                if not squeeze then
+                    x = x+width+marginX
+                else
+                    x = x+squeeze
+                end
             end
         end
     end
@@ -185,11 +198,19 @@ end
 local function mouseOverCard(self, x, y)
     if self.getHand then
         local hand = self.getHand()
+        if not (hand and hand[1]) then return end
         local width, height = 140, 140
-        local hx, hy = love.graphics.getWidth()/2-(#hand/2*width), love.graphics.getHeight()-height
-        local hwidth = width*#hand
-        if hx<x and hy<y and x<hx+hwidth and y<hy+height then
-            return math.ceil((x-hx)/width)
+        local handwidth = #hand*width
+        local rightExtra = 0
+        if handwidth>1220 then
+            handwidth = 1220
+            local newwidth = handwidth/#hand
+            rightExtra = width-newwidth
+            width = newwidth
+        end
+        local hx, hy = love.graphics.getWidth()/2-handwidth/2, love.graphics.getHeight()-height
+        if hx<x and hy<y and x<hx+handwidth+rightExtra and y<hy+height then
+            return math.min(#hand, math.ceil((x-hx)/width))
         end
     end
 end
