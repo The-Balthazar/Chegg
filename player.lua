@@ -7,7 +7,7 @@ function player:new()
     self.manaMax = self.manaMax or 0
     self.hand = self.hand or {'king'}
     self.summons = self.summons or {}
-    self.deck = self.deck or {
+    self.deck = require'pieces'.sanitiseDecklist(self.deck or {
         'zombie',
         'creeper',
         'pig',
@@ -25,7 +25,7 @@ function player:new()
         'cat',
         'sniffer',
         'wither',
-    }
+    })
     return self
 end
 

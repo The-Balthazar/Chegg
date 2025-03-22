@@ -623,6 +623,23 @@ local piecetypes = {
 local piece = {}
 piece.__index = piece
 
+function piece.sanitiseDecklist(deck)
+    if type(deck)~='table' then deck = {} end
+    for i, card in ipairs(deck) do
+        if i>15 then
+            deck[i] = nil
+        elseif not (piecetypes[card] and piecetypes[card].deck) then
+            deck[i] = 'pig'
+        end
+    end
+    if #deck<15 then
+        for i=#deck+1, 15 do
+            deck[i] = 'pig'
+        end
+    end
+    return deck
+end
+
 function piece.getTypeData(t) return piecetypes[t] end
 
 function piece:new()
