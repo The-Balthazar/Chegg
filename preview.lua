@@ -128,8 +128,8 @@ function preview:draw()
 
         if hand[1] then
             local handwidth = #hand*width
-            if handwidth>1220 then
-                handwidth = 1220
+            if handwidth>love.graphics.getWidth()-700 then
+                handwidth = love.graphics.getWidth()-700
                 squeeze = handwidth/#hand
             end
 
@@ -140,13 +140,13 @@ function preview:draw()
                 local hoverBoard = self.board:screenPosIsOverBoard(mx, my)
                 love.graphics.setLineWidth(self.board.scale*2.5)
                 local tx, ty = self.board:getGridCoordAtPos(mx, my)
-                local x = x+(handPressIndex-1)*(squeeze or width)+width/2
+                local x = x+(handPressIndex-1)*(squeeze or width)+(squeeze and width-marginX-marginX or width)/2
                 if hoverBoard and self.board:canSummonAt(self.player, hand[handPressIndex], tx, ty) then
                     love.graphics.setColor(0, 0, 1, 1)
-                    love.graphics.line(x, y+height/2, self.board:getTileAbsPos(tx, ty))
+                    love.graphics.line(x, y-(squeeze and 40 or 20), self.board:getTileAbsPos(tx, ty))
                 else
                     love.graphics.setColor(1, 1, 1, 1)
-                    love.graphics.line(x, y+height/2, mx, my)
+                    love.graphics.line(x, y-(squeeze and 40 or 20), mx, my)
                 end
             end
 
@@ -202,8 +202,8 @@ local function mouseOverCard(self, x, y)
         local width, height = 140, 140
         local handwidth = #hand*width
         local rightExtra = 0
-        if handwidth>1220 then
-            handwidth = 1220
+        if handwidth>love.graphics.getWidth()-700 then
+            handwidth = love.graphics.getWidth()-700
             local newwidth = handwidth/#hand
             rightExtra = width-newwidth
             width = newwidth
@@ -274,6 +274,7 @@ function preview:mousereleased(x, y, button, istouch, presses, intercepted)
         handPressIndex = nil
         return true
     end
+    handPressIndex = nil
 end
 
 return preview
