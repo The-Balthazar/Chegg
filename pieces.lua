@@ -26,11 +26,6 @@ end
 
 local function nope() return false end
 
-local function defaultCanSpawnHere(self, targetX, targetY)
-    return targetY>=self.board.rows-self.board.homeRows
-    --TODO or enemy and targetY<=self.board.homeRows
-end
-
 local function nearestCardinalAttack(self, targetX, targetY)
     local lx, ly = self.pos[1], self.pos[2]
     if not (lx==targetX or ly==targetY) then return end
@@ -104,6 +99,11 @@ local piecetypes = {
         onKill = function(self, instigator)
             self.player:defeat(instigator)
         end,
+        onSummon = function(self)
+            if self.player==self.board.localplayer then
+                self.board:endTurn(self.player)
+            end
+        end,
     },
     zombie = {
         name = 'Zombie',
@@ -122,7 +122,7 @@ local piecetypes = {
         canTravelTo = function(self, targetX, targetY)
             return
                 math.abs(self.pos[1]-targetX)<=1 and
-                targetY==self.pos[2]-1 and -- TODO or other player and +1
+                targetY==self.pos[2]-(self.player==self.board.localplayer and 1 or -1) and
                 not self.board:getLivingPieceAt(targetX, targetY)
         end,
         canAttackTo = basic1cardinalAttack,
@@ -303,7 +303,7 @@ local piecetypes = {
             local sX, sY = unpack(self.pos)
             local rX, rY = tX-sX, tY-sY
             local mX, mY = math.abs(rX)==2 and 1 or 2, math.abs(rY)==2 and 1 or 2
-            board:moveTo(target, tX-math.clamp(rX, -mX, mX), tY-math.clamp(rY, -mY, mY))
+            board:moveNoSend(target, tX-math.clamp(rX, -mX, mX), tY-math.clamp(rY, -mY, mY))
             return true
         end,
         -- attackAreaPreview = function(self, targetX, targetY)
@@ -441,9 +441,9 @@ local piecetypes = {
             local board = self.board
 
             for i, piece in ipairs(board:getPiecesAt(targetX, targetY)) do
-                board:moveTo(piece, sX, sY)
+                board:moveNoSend(piece, sX, sY)
             end
-            board:moveTo(self, targetX, targetY)
+            board:moveNoSend(self, targetX, targetY)
 
             return true
         end,
@@ -544,32 +544,33 @@ local piecetypes = {
             self.player:takeMana(-1)
         end,
     },
-    sniffer = {
-        name = 'Sniffer',
-        desc = 'Sniffers can move 1 in any direction, and can\'t attack.\n\nWhen summoned you draw 2 from your opponents deck. When killed you discard 2 at random.',
-        cost = 5,
-        deck = true,
-        moveRange = 1,
-        attackRange = 0,
-        moveCost = 0,
-        dashCost = 1,
-        canTravelTo = basic1move,
-        canAttackTo = nope,
-        quad = genQuad(7, 2),
-        quadM = genQuad(6, 5),
-        image = spriteAtlas,
-        onSummon = function(self)
-            local enemy = self.board:getOpponent(self.player)
-            if enemy then
-                self.player:addToHand(enemy:mill())
-                self.player:addToHand(enemy:mill())
-            end
-        end,
-        onKill = function(self, instigator)
-            self.player:discardRandom()
-            self.player:discardRandom()
-        end,
-    },
+    -- sniffer = {
+    --     name = 'Sniffer',
+    --     desc = 'Sniffers can move 1 in any direction, and can\'t attack.\n\nWhen summoned you draw 2 from your opponents deck. When killed you discard 2 at random.',
+    --     cost = 5,
+    --     deck = true,
+    --     moveRange = 1,
+    --     attackRange = 0,
+    --     moveCost = 0,
+    --     dashCost = 1,
+    --     canTravelTo = basic1move,
+    --     canAttackTo = nope,
+    --     quad = genQuad(7, 2),
+    --     quadM = genQuad(6, 5),
+    --     image = spriteAtlas,
+    --     onSummon = function(self)
+    --         local enemy = self.board:getOpponent(self.player)
+    --         if enemy then
+    --             -- TODO Sync hand
+    --             self.player:addToHand(enemy:mill())
+    --             self.player:addToHand(enemy:mill())
+    --         end
+    --     end,
+    --     onKill = function(self, instigator)
+    --         self.player:discardRandom()
+    --         self.player:discardRandom()
+    --     end,
+    -- },
     wither = {
         name = 'Wither',
         desc = 'On summon the Wither explodes, killing anything within 1 range.\n\nIt can move 1 in any direction, and can attack the nearest creature down a given cardinal direction, up to 3 spaces away. This attack costs 2, and inflicts splash damage to the 4 adjacent tiles.',
@@ -600,10 +601,12 @@ local piecetypes = {
             for x=-1, 1 do
                 for y=-1, 1 do
                     if not (x==0 and y==0) then
-                        board:createEffectAt('explosion', self.pos[1]+x, self.pos[2]+y)
-                        local grid = board:getPiecesAt(self.pos[1]+x, self.pos[2]+y)
+                        local tx, ty = self.pos[1]+x, self.pos[2]+y
+                        board:createEffectAt('explosion', tx, ty)
+                        local grid = board:getPiecesAt(tx, ty)
                         if grid then
                             for i, piece in ipairs(grid) do
+                                -- board:sendData(self.player, ('KILL: %d %d'):format(tx, ty))
                                 piece:kill(self)
                             end
                         end
@@ -727,6 +730,8 @@ function piece:canAttackTo(targetX, targetY)
 end
 
 function piece:onAttackTo(targetX, targetY)
+    local board = self.board
+    board:sendData(self.player, ('ATTACK: %d %d %d %d'):format(board:sendXYXY(self.pos[1], self.pos[2], targetX, targetY)) )
     if self.typeData.onAttackTo then
         self.typeData.onAttackTo(self, targetX, targetY)
     end
@@ -765,10 +770,11 @@ local summonSickSpiral = genQuad(9, 7)
 local hsvcolour = love.graphics.newShader'hsvcolour.vs'
 
 function piece:draw(boardXPos, boardYPos, gridXPos, gridYPos)
+    local opponent = self.player~=self.board.localplayer
     love.graphics.setShader(hsvcolour)
     local v = self:canMove() and 1 or self:canSpecial() and 0.5 or 0
     love.graphics.setColor(1, v, 0.5+0.5*v)
-    love.graphics.draw(spriteAtlas, piecetypes[self.type].quad, gridXPos, gridYPos+self.board.scale*spriteSize*0.25, self.rotation or 0, self.board.scale, self.board.scale, spriteSize/2, spriteSize*0.75)
+    love.graphics.draw(spriteAtlas, piecetypes[self.type].quad, gridXPos, gridYPos+self.board.scale*spriteSize*0.25, (self.rotation or 0)+(opponent and math.pi or 0), self.board.scale, self.board.scale, spriteSize/2, spriteSize*(opponent and 0.25 or 0.75))
     love.graphics.setColor(1, 1, 1, 1)
     love.graphics.setShader()
     if self:hasSummoningSickness() and self:isAlive() then

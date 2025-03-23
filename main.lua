@@ -53,3 +53,15 @@ function love.wheelmoved(x, y)
         activeMode:wheelmoved(x, y)
     end
 end
+
+function love.keypressed(...)
+    if activeMode and activeMode.keypressed then
+        activeMode:keypressed(...)
+    end
+end
+
+function love.textinput(...)
+    if activeMode and activeMode.textinput then
+        activeMode:textinput(...)
+    end
+end

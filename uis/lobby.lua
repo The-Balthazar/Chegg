@@ -1,0 +1,160 @@
+local menu = {}
+menu.__index = menu
+
+local connection
+
+require'enet.handlers'
+
+function menu:new()
+    setmetatable(self, menu)
+
+    self.ipbutton = {
+        xy = function()
+            return 600, 50
+        end,
+        widthheight = function() return 500, 50 end,
+        press = function()
+            if connection then return end
+            self.ipbutton.selpress = not self.ipbutton.selpress
+        end,
+        onHover = function()
+            if connection then return end
+            self.ipbutton.hover = true
+        end,
+        activeIf = function() return not connection end,
+        text = 'localhost:25565',
+        getText = function()
+            return (self.ipbutton.hover or self.ipbutton.selpress) and not connection and (math.floor(love.timer.getTime()*1.5)%2)==1 and ' '..self.ipbutton.text..'|'
+        end
+    }
+
+    function self.START(button, secondPlayer)
+        if not self.deck then return end
+        if connection and self.opponentType~='remote' then return end
+        setMode(require'uis.game'.new{
+            deck = self.deck,
+            isStartingPlayer = not secondPlayer,
+            opponentType = self.opponentType,
+            opponentDeck = self.opponentDeck,
+        })
+        if self.opponentType=='remote' then
+            love.thread.getChannel'comOut':push('START')
+        end
+    end
+
+    self.activepreview = require'preview'.new{
+        buttons = {
+            {
+                xy = function()
+                    return 50, 50
+                end,
+                widthheight = function() return 200, 50 end,
+                press = function()
+                    if connection then return end
+                    EnetInit(self.ipbutton.text, true)
+                    self.ipbutton.selpress = nil
+                    connection = true
+                    self.ipbutton.text = ('hosting on udp port %s'):format(self.ipbutton.text:match':([%d]+)' or '25565')
+                end,
+                activeIf = function() return not connection end,
+                text = 'host',
+            },
+            {
+                xy = function()
+                    return 300, 50
+                end,
+                widthheight = function() return 200, 50 end,
+                press = function()
+                    if connection then return end
+                    EnetInit(self.ipbutton.text)
+                    self.ipbutton.selpress = nil
+                    connection = true
+                    local i, p = (self.ipbutton.text:match'^([%w%.]+)' or 'localhost'), (self.ipbutton.text:match'(:[%d]+)' or ':25565')
+                    self.ipbutton.text = ('connecting to %s%s'):format(i, p)
+                end,
+                activeIf = function() return not connection end,
+                text = 'join',
+            },
+            {
+                xy = function()
+                    return 550, 50
+                end,
+                widthheight = function() return 50, 50 end,
+                press = self.ipbutton.press,
+                onHover = self.ipbutton.onHover,
+                activeIf = function() return not connection end,
+                text = 'ip',
+            },
+            self.ipbutton,
+            {
+                xy = function()
+                    local w = love.graphics.getWidth()
+                    return w-250, w>1355 and 50 or 100
+                end,
+                widthheight = function() return 200, 50 end,
+                press = function() setMode(require'uis.mainmenu'.new{}) end,
+                text = 'go back',
+            },
+            {
+                xy = function()
+                    return love.graphics.getWidth()-250, love.graphics.getHeight()-100
+                end,
+                widthheight = function() return 200, 50 end,
+                press = self.START,
+                text = 'play',
+                activeIf = function() return self.deck and (not connection or connection and self.opponentType=='remote') end,
+            },
+        }
+    }
+    return self
+end
+
+function menu:draw()
+    love.graphics.clear(1/2,1/2,1/2)
+    if self.activepreview then self.activepreview:draw() end
+end
+
+function menu:update(delta)
+    EnetHandle(function(data)
+        if data:find'^MSG: ' then
+            self.ipbutton.text = data:match'^MSG: (.*)'
+            love.thread.getChannel'comOut':push('DECK: '..table.serialize(self.deck))
+        elseif data:find'^DECK: return ' then
+            self.opponentDeck = loadstring(data:match'^DECK: (.*)')()
+            self.opponentType = 'remote'
+        elseif data=='START' then
+            self.START(nil, true)
+        end
+    end)
+end
+
+function menu:mousemoved(x, y, xDelta, yDelta, istouch)
+    local intercepted
+    if self.activepreview then intercepted = self.activepreview:mousemoved(x, y, xDelta, yDelta, istouch, intercepted) end
+end
+
+function menu:mousepressed(x, y, button, istouch, presses)
+    local intercepted
+    if self.activepreview then intercepted = self.activepreview:mousepressed(x, y, button, istouch, presses, intercepted) end
+end
+
+function menu:mousereleased(x, y, button, istouch, presses)
+    local intercepted
+    if self.activepreview then intercepted = self.activepreview:mousereleased(x, y, button, istouch, presses, intercepted) end
+end
+
+function menu:keypressed(k)
+    if connection then return end
+    if not (self.ipbutton.hover or self.ipbutton.selpress) then return end
+    if k=='backspace' and self.ipbutton.text~='' then
+        self.ipbutton.text = self.ipbutton.text:sub(1, -2)
+    end
+end
+
+function menu:textinput(t)
+    if connection then return end
+    if not (self.ipbutton.hover or self.ipbutton.selpress) then return end
+    self.ipbutton.text = self.ipbutton.text..t:lower()
+end
+
+return menu

@@ -56,6 +56,12 @@ local particles = {
     hit          = require'particles.hit',
 }
 
+function board:sendData(player, data)
+    if self.othertype~='remote' then return end
+    if player~=self.localplayer then return end
+    love.thread.getChannel'comOut':push(data)
+end
+
 function board:update(delta)
     self.pos[1], self.pos[2] = love.graphics.getWidth()/2,love.graphics.getHeight()/2
     self.scale = math.easeDecay(self.scale, self.scaleT, 24, delta)
@@ -70,6 +76,40 @@ function board:update(delta)
     for k, v in pairs(particles) do
         v:update(delta)
     end
+    EnetHandle(function(data)
+        if data=='ENDTURN' then
+            if self:canEndTurn(self.otherplayer) then
+                self:endTurn(self.otherplayer)
+            else
+                error"opponent tried to end turn when they can't?"
+            end
+
+        elseif data:find'^SUMMON:' then
+            local t, x, y = data:match': (%a*) (%d*) (%d*)'
+            self:summonAt(self.otherplayer, t, tonumber(x), tonumber(y))
+
+        elseif data:find'^MOVE:' then
+            local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
+            local piece = self:getLivingPieceAt(tonumber(sx), tonumber(sy))
+            if piece.move then
+                piece:move(tonumber(x), tonumber(y))
+            else
+                local x, y = tonumber(x), tonumber(y)
+                piece:onMoveTo(x, y)
+                self:moveTo(piece, x, y)
+            end
+
+        elseif data:find'^ATTACK:' then
+            local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
+            self:attack(self:getPiecesAt(tonumber(sx), tonumber(sy))[1], tonumber(x), tonumber(y))
+
+        elseif data:find'^ATTACKTO:' then
+            local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
+            local piece = self:getLivingPieceAt(tonumber(sx), tonumber(sy))
+            piece:onAttackTo(tonumber(x), tonumber(y))
+
+        end
+    end)
 end
 
 local white, black = {0.8,0.8,0.8}, {0.2,0.2,0.2}
@@ -255,10 +295,13 @@ function board:endTurn(activeplayer)
     if not self:canEndTurn(activeplayer) then return end
     self.turn = self.turn+1
     local other = self:getOpponent(activeplayer)
-    if other then
+
+    activeplayer.mana = 0
+
+    if other and not other.dead then
+        self:sendData(activeplayer, 'ENDTURN')
         other:startTurn()
     else
-        print("No opponent, skipping turn")
         self.turn = self.turn+1
         activeplayer:startTurn()
     end
@@ -360,8 +403,8 @@ function board:mousereleased(x, y, button, istouch, presses, intercepted)
     end
     if dragWithPiece and self.mouseOver then
         local tX, tY = self:getGridCoordAtPos(x, y)
-        if not self:movePiece(dragWithPiece, tX, tY) then
-            self:attackWithPiece(dragWithPiece, tX, tY)
+        if not self:movePiece(self.localplayer, dragWithPiece, tX, tY) then
+            self:attackWithPiece(self.localplayer, dragWithPiece, tX, tY)
         end
     end
     hoverAttackHighlight = nil
@@ -386,19 +429,29 @@ end
 
 function board:canSummon(player, pType)
     if not pType then return end
-    -- TODO player turn check
+    if not self:isActivePlayer(player) then return end
     return player:getMana()>=(require'pieces'.getTypeData(pType).cost or math.huge)
 end
 
 function board:canSummonAt(player, pType, x, y)
     if self:getLivingPieceAt(x, y) then return end
-    if self.rows-self.homeRows>=y then return end -- TODO enemy check
+    if player==self.localplayer and self.rows-self.homeRows>=y then return end
+    if player==self.otherplayer and y>self.homeRows then return end
     return true
+end
+
+function board:sendXY(x, y)
+    return self.cols+1-x, self.rows+1-y
+end
+
+function board:sendXYXY(x, y, x2, y2)
+    return self.cols+1-x, self.rows+1-y, self.cols+1-x2, self.rows+1-y2
 end
 
 function board:summonAt(player, pType, x, y)
     if not self:canSummon(player, pType) or not self:canSummonAt(player, pType, x, y) then return end
     if not player:takeMana(require'pieces'.getTypeData(pType).cost) then return end
+    self:sendData(player, ('SUMMON: %s %d %d'):format(pType, self:sendXY(x, y)))
     local piece = require'pieces'.new{
         type = pType,
         board = self,
@@ -410,7 +463,7 @@ function board:summonAt(player, pType, x, y)
     return true
 end
 
-function board:moveTo(piece, x, y)
+function board:moveNoSend(piece, x, y)
     local px, py = unpack(piece.pos)
     table.insert(self.grid[x][y], 1, table.removeByValue(self.grid[px][py], piece))
     piece.pos[1], piece.pos[2] = x, y
@@ -418,8 +471,18 @@ function board:moveTo(piece, x, y)
     return true
 end
 
+function board:moveTo(piece, x, y)
+    local px, py = unpack(piece.pos)
+    table.insert(self.grid[x][y], 1, table.removeByValue(self.grid[px][py], piece))
+    piece.pos[1], piece.pos[2] = x, y
+
+    self:sendData(piece.player, ('MOVE: %d %d %d %d'):format(self:sendXYXY(px, py, x, y)))
+    return true
+end
+
 function board:attack(piece, x, y)
     if self:isWithinBounds(x, y) then
+        self:sendData(piece.player, ('ATTACK: %d %d %d %d'):format(self:sendXYXY(piece.pos[1], piece.pos[2], x, y)))
         if piece.attackEffect then
             piece:attackEffect(x, y)
         end
@@ -435,11 +498,13 @@ function board:attack(piece, x, y)
     end
 end
 
-function board:movePiece(piece, x, y)
+function board:movePiece(player, piece, x, y)
     if not piece or not x or not y then return end
+    if piece.player~=player then return end
     if not piece:canTravelTo(x, y) then return end
     piece:onMoveTo(x, y)
     if piece.move then
+        self:sendData(player, ('MOVE: %d %d %d %d'):format(self:sendXYXY(piece.pos[1], piece.pos[2], x, y)))
         return piece:move(x, y)
     else
         if self:getLivingPieceAt(x, y) then
@@ -450,8 +515,9 @@ function board:movePiece(piece, x, y)
     end
 end
 
-function board:attackWithPiece(piece, x, y)
+function board:attackWithPiece(player, piece, x, y)
     if not piece then return end
+    if piece.player~=player then return end
     if not piece:canAttackTo(x, y) then return end
     if self:getLivingPieceAt(x, y) then
         piece:onAttackTo(x, y)

@@ -7,7 +7,7 @@ function preview.new(data)
     return new
 end
 
-local text = love.graphics.newImageFont('text.png', ' abcdefghijklmnopqrstuvwxyz1234567890+-/().,:;')
+local text = love.graphics.newImageFont('text.png', ' abcdefghijklmnopqrstuvwxyz1234567890+-/().,:;|')
 text:setFilter('nearest', 'nearest')
 
 local gemz = {
@@ -77,8 +77,8 @@ function preview:draw()
             love.graphics.rectangle("line", x+5, y+5, width-10, height-10)
         end
         love.graphics.setColor(lum,lum,lum,v.pressed and active and 0.5 or 1)
-        if v.text then
-            love.graphics.printf(v.text, text, x+10, y+height/2-11, width/2-10, 'center', 0, 2, 2)
+        if v.text or v.getText then
+            love.graphics.printf(v.getText and v.getText() or v.text, text, x+10, y+height/2-11, width/2-10, 'center', 0, 2, 2)
         end
     end
     if self.getTurnNumber then
@@ -86,7 +86,8 @@ function preview:draw()
         if count then
             local x, y = spriteSize*3, love.graphics.getHeight()-(spriteSize*2)
             love.graphics.setColor(0,0,0)
-            local orderTurn = count%2==1 and 'First Player' or 'Second Player'
+
+            local orderTurn = self.board:isActivePlayer(self.player) and 'Your turn' or 'Opponents turn'
             love.graphics.printf(('Turn: %d - %s'):lower():format(math.max(0,math.ceil(count/2)), orderTurn:lower()), text, x-5, y-5, 200, 'left', 0, 2, 2)
         end
     end
