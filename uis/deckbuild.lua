@@ -51,6 +51,17 @@ function deckbuild:new()
         end
     end
 
+    local savedDeck = love.filesystem.getInfo'decks/deck.lua'
+    if savedDeck then
+        savedDeck = love.filesystem.load'decks/deck.lua'()
+        for i, key in ipairs(savedDeck) do
+            if self.deckHash[key] then
+                self.deckHash[key] = self.deckHash[key]+1
+                self.deckCount = self.deckCount+1
+            end
+        end
+    end
+
     table.sort(self.cardsArray, function(a, b)
         local acost, bcost = self.cardsHash[a].cost, self.cardsHash[b].cost
         if acost==bcost then return a<b end
@@ -71,7 +82,6 @@ function deckbuild:new()
                 widthheight = function()
                     return 200, 50
                 end,
-                onHover = function() previewItem = key end,
                 press = function()
                     if self.deckCount~=15 then return end
                     local deckArray = {}
