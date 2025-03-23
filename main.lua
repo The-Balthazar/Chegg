@@ -1,4 +1,4 @@
-local activeboard, activepreview, activeplayer
+local activeMode
 
 function love.load()
     require'utils'
@@ -11,76 +11,41 @@ function love.load()
         return love.graphics.newQuad((xi-1)*spriteSize, (yi-1)*spriteSize, spriteSize, spriteSize, spriteAtlas)
     end
 
-    activeplayer = require'player'.new{}
-
-    activeboard = require'board'.new{
-        rows = 10,
-        cols = 8,
-        players = {activeplayer}
-    }
-    activepreview = require'preview'.new{
-        board = activeboard,
-        player = activeplayer,
-        getPreviewItem = function()
-            local piece = activeboard:getSelectedPiece()
-            if piece then
-                return require'pieces'.getTypeData(piece.type)
-            end
-        end,
-        getManaCount = function() return activeplayer:getMana() end,
-        getTurnNumber = function() return activeboard.turn end,
-        getHand = function() return activeplayer:getHand() end,
-        getDeckSize = function() return activeplayer:getDeckSize() end,
-        buttons = {
-            {
-                xy = function() return spriteSize*3, love.graphics.getHeight()-(spriteSize*2)+20 end,
-                widthheight = function() return 200, 100-40 end,
-                press = function() activeboard:endTurn(activeplayer) end,
-                text = ('End turn'):lower(),
-                activeIf = function() return activeboard:canEndTurn(activeplayer) end,
-            }
-        }
-    }
+    activeMode = require'uis.game'.new{}
 end
 
 function love.update(delta)
-    if activeboard then
-        activeboard:update(delta)
+    if activeMode then
+        activeMode:update(delta)
     end
 end
 
 function love.draw()
-    love.graphics.clear(1/2,1/2,1/2)
-    love.graphics.setColor(0,0,0)
-
-    if activeboard then
-        activeboard:draw()
-    end
-    if activepreview then
-        activepreview:draw()
+    if activeMode then
+        activeMode:draw()
     end
 end
 
 function love.mousemoved(x, y, xDelta, yDelta, istouch)
-    local intercepted
-    if activepreview then intercepted = activepreview:mousemoved(x, y, xDelta, yDelta, istouch, intercepted) end
-    if activeboard   then intercepted =   activeboard:mousemoved(x, y, xDelta, yDelta, istouch, intercepted) end
+    if activeMode and activeMode.mousemoved then
+        activeMode:mousemoved(x, y, xDelta, yDelta, istouch)
+    end
 end
 
 function love.mousepressed(x, y, button, istouch, presses)
-    local intercepted
-    if activepreview then intercepted = activepreview:mousepressed(x, y, button, istouch, presses, intercepted) end
-    if activeboard   then intercepted =   activeboard:mousepressed(x, y, button, istouch, presses, intercepted) end
+    if activeMode and activeMode.mousepressed then
+        activeMode:mousepressed(x, y, button, istouch, presses)
+    end
 end
 
 function love.mousereleased(x, y, button, istouch, presses)
-    local intercepted
-    if activepreview then intercepted = activepreview:mousereleased(x, y, button, istouch, presses, intercepted) end
-    if activeboard   then intercepted =   activeboard:mousereleased(x, y, button, istouch, presses, intercepted) end
+    if activeMode and activeMode.mousereleased then
+        activeMode:mousereleased(x, y, button, istouch, presses)
+    end
 end
 
 function love.wheelmoved(x, y)
-    if activeboard then
-        activeboard:wheelmoved(x, y)
+    if activeMode and activeMode.wheelmoved then
+        activeMode:wheelmoved(x, y)
     end
 end
