@@ -645,6 +645,8 @@ end
 
 function piece.getTypeData(t) return piecetypes[t] end
 
+function piece.getTypesData() return piecetypes end
+
 function piece:new()
     local new = setmetatable(self, piece)
 

@@ -77,7 +77,9 @@ function preview:draw()
             love.graphics.rectangle("line", x+5, y+5, width-10, height-10)
         end
         love.graphics.setColor(lum,lum,lum,v.pressed and active and 0.5 or 1)
-        love.graphics.printf(v.text, text, x+10, y+20, width/2-10, 'center', 0, 2, 2)
+        if v.text then
+            love.graphics.printf(v.text, text, x+10, y+height/2-11, width/2-10, 'center', 0, 2, 2)
+        end
     end
     if self.getTurnNumber then
         local count = tonumber(self.getTurnNumber())
@@ -221,6 +223,7 @@ function preview:mousemoved(x, y, xDelta, yDelta, istouch, intercepted)
     for i, v in ipairs(self.buttons) do
         v.hover = mouseOverButton(v, x, y)
         if v.hover then
+            if v.onHover then v.onHover() end
             return true
         end
     end
@@ -248,7 +251,9 @@ function preview:mousepressed(x, y, button, istouch, presses, intercepted)
 end
 
 function preview:mousereleased(x, y, button, istouch, presses, intercepted)
-    self.board:setHighlightSpawnFor(nil)
+    if self.board then
+        self.board:setHighlightSpawnFor(nil)
+    end
     for i, v in ipairs(self.buttons) do v.pressed = nil end
     if handPressIndex and not handHoverIndex then
         local hand = self.getHand()
