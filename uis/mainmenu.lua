@@ -40,10 +40,14 @@ end
 local text = love.graphics.newImageFont('bigtext.png', ' abcdefghijklmnopqrstuvwxyz!?')
 text:setFilter('nearest', 'nearest')
 
+local crown = genQuad(1, 1)
+
 function menu:draw()
     love.graphics.clear(1/2,1/2,1/2)
     love.graphics.setColor(0,0,0)
     love.graphics.printf('chegg', text, 0, 100, love.graphics.getWidth()/2, 'center', 0, 2, 2)
+    love.graphics.setColor(1,1,1)
+    love.graphics.draw(spriteAtlas, crown, love.graphics.getWidth()/2, 60, 0, 2, 2, 35, 25)
     if self.activepreview then self.activepreview:draw() end
 end
 
