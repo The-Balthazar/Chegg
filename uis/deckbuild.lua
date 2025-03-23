@@ -68,7 +68,7 @@ function deckbuild:new()
         return acost<bcost
     end)
 
-    local previewItem
+    local previewItem, canSave
 
     self.activepreview = require'preview'.new{
         getPreviewItem = function()
@@ -92,10 +92,19 @@ function deckbuild:new()
                     end
                     love.filesystem.createDirectory'decks'
                     love.filesystem.write('decks/deck.lua', table.serialize(deckArray))
+                    canSave = nil
                 end,
                 text = 'save deck',
-                activeIf = function() return self.deckCount==15 end,
-            }
+                activeIf = function() return canSave end,
+            },
+            {
+                xy = function()
+                    return love.graphics.getWidth()-250, 50
+                end,
+                widthheight = function() return 200, 50 end,
+                press = function() setMode(require'uis.mainmenu'.new{}) end,
+                text = 'go back',
+            },
         }
     }
 
@@ -122,6 +131,7 @@ function deckbuild:new()
                 if self.deckCount>=15 then return end
                 self.deckCount = self.deckCount+1
                 self.deckHash[key] = self.deckHash[key]+1
+                canSave = self.deckCount==15
             end,
             text = '+',
             activeIf = function() return self.deckCount<15 end,
@@ -140,18 +150,13 @@ function deckbuild:new()
                 if self.deckHash[key]<=0 then return end
                 self.deckCount = self.deckCount-1
                 self.deckHash[key] = self.deckHash[key]-1
+                canSave = self.deckCount==15
             end,
             text = '-',
             activeIf = function() return self.deckHash[key]>0 end,
         })
     end
     return self
-end
-
-function deckbuild:update(delta)
-    -- if self.activeboard then
-    --     self.activeboard:update(delta)
-    -- end
 end
 
 local text = love.graphics.newImageFont('text.png', ' abcdefghijklmnopqrstuvwxyz1234567890+-/().,:;')

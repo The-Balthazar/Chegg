@@ -11,11 +11,15 @@ function love.load()
         return love.graphics.newQuad((xi-1)*spriteSize, (yi-1)*spriteSize, spriteSize, spriteSize, spriteAtlas)
     end
 
-    activeMode = require'uis.game'.new{}
+    activeMode = require'uis.mainmenu'.new{}
+end
+
+function setMode(mode)
+    activeMode = mode or activeMode
 end
 
 function love.update(delta)
-    if activeMode then
+    if activeMode and activeMode.update then
         activeMode:update(delta)
     end
 end

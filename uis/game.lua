@@ -4,7 +4,9 @@ game.__index = game
 function game:new()
     setmetatable(self, game)
 
-    self.activeplayer = require'player'.new{}
+    self.activeplayer = require'player'.new{
+        deck = self.deck,
+    }
 
     self.activeboard = require'board'.new{
         rows = 10,
