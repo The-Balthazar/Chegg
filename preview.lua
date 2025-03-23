@@ -3,16 +3,6 @@ preview.__index = preview
 
 function preview.new(data)
     local new = setmetatable(data, preview)
-    data.buttons = {}
-    if data.endTurn then
-        table.insert(data.buttons, {
-            xy = function() return spriteSize*3, love.graphics.getHeight()-(spriteSize*2)+20 end,
-            widthheight = function() return 200, 100-40 end,
-            press = data.endTurn,
-            text = ('End turn'):lower(),
-            activeIf = data.canEndTurn,
-        })
-    end
 
     return new
 end

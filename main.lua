@@ -29,12 +29,17 @@ function love.load()
         end,
         getManaCount = function() return activeplayer:getMana() end,
         getTurnNumber = function() return activeboard.turn end,
-        endTurn = function()
-            activeboard:endTurn(activeplayer)
-        end,
-        canEndTurn = function() return activeboard:canEndTurn(activeplayer) end,
         getHand = function() return activeplayer:getHand() end,
         getDeckSize = function() return activeplayer:getDeckSize() end,
+        buttons = {
+            {
+                xy = function() return spriteSize*3, love.graphics.getHeight()-(spriteSize*2)+20 end,
+                widthheight = function() return 200, 100-40 end,
+                press = function() activeboard:endTurn(activeplayer) end,
+                text = ('End turn'):lower(),
+                activeIf = function() return activeboard:canEndTurn(activeplayer) end,
+            }
+        }
     }
 end
 
