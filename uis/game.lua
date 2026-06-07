@@ -7,32 +7,44 @@ function game:new()
     local function endscreen(player, instigator)
         if self.gameover then return end
         self.gameover = true
-        table.insert(self.activepreview.buttons,{
-            xy = function() return love.graphics.getWidth()/2-250, 400 end,
-            widthheight = function() return 200, 60 end,
-            press = function()
-                setMode(require'uis.mainmenu'.new{})
-                EnetDisconnect()
-            end,
-            text = ('Main menu'):lower(),
-        })
-        table.insert(self.activepreview.buttons,{
-            xy = function() return love.graphics.getWidth()/2+50, 400 end,
-            widthheight = function() return 200, 60 end,
-            press = function()
-                setMode(require'uis.game'.new{
-                    deck = self.localplayer.startingDeck,
-                    isStartingPlayer = not self.isStartingPlayer,
-                    opponentType = self.activeboard.othertype,
-                    opponentDeck = self.otherplayer.startingDeck,
-                })
-                if self.activeboard.othertype=='remote' then
-                    love.thread.getChannel'comOut':push('RESTART')
-                end
-            end,
-            activeIf = function() return not self.otherDisconnected end,
-            text = ('Rematch'):lower(),
-        })
+        if self.otherplayer then
+            table.insert(self.activepreview.buttons,{
+                xy = function() return love.graphics.getWidth()/2-250, 400 end,
+                widthheight = function() return 200, 60 end,
+                press = function()
+                    setMode(require'uis.mainmenu'.new{})
+                    EnetDisconnect()
+                end,
+                text = ('Main menu'):lower(),
+            })
+            table.insert(self.activepreview.buttons,{
+                xy = function() return love.graphics.getWidth()/2+50, 400 end,
+                widthheight = function() return 200, 60 end,
+                press = function()
+                    setMode(require'uis.game'.new{
+                        deck = self.localplayer.startingDeck,
+                        isStartingPlayer = not self.isStartingPlayer,
+                        opponentType = self.activeboard.othertype,
+                        opponentDeck = self.otherplayer.startingDeck,
+                    })
+                    if self.activeboard.othertype=='remote' then
+                        love.thread.getChannel'comOut':push('RESTART')
+                    end
+                end,
+                activeIf = function() return not self.otherDisconnected end,
+                text = ('Rematch'):lower(),
+            })
+        else
+            table.insert(self.activepreview.buttons,{
+                xy = function() return love.graphics.getWidth()/2-100, 400 end,
+                widthheight = function() return 200, 60 end,
+                press = function()
+                    setMode(require'uis.mainmenu'.new{})
+                    EnetDisconnect()
+                end,
+                text = ('Main menu'):lower(),
+            })
+        end
     end
 
     self.localplayer = require'player'.new{
