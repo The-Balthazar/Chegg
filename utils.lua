@@ -3,6 +3,16 @@ function math.clamp(n, min, max) return math.min(max, math.max(n, min)) end
 function math.round(n) return math.floor(n+0.5) end
 function math.sign(n) return n<0 and -1 or n==0 and 0 or 1 end
 
+function table.copy(t,new)
+    new=new or {}
+    if t then
+        for k, v in pairs(t) do
+            new[k]=v
+        end
+    end
+    return new
+end
+
 function table.find(a,f)
     for i, v in ipairs(a) do
         if v==f then

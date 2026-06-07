@@ -76,40 +76,6 @@ function board:update(delta)
     for k, v in pairs(particles) do
         v:update(delta)
     end
-    EnetHandle(function(data)
-        if data=='ENDTURN' then
-            if self:canEndTurn(self.otherplayer) then
-                self:endTurn(self.otherplayer)
-            else
-                error"opponent tried to end turn when they can't?"
-            end
-
-        elseif data:find'^SUMMON:' then
-            local t, x, y = data:match': (%a*) (%d*) (%d*)'
-            self:summonAt(self.otherplayer, t, tonumber(x), tonumber(y))
-
-        elseif data:find'^MOVE:' then
-            local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
-            local piece = self:getLivingPieceAt(tonumber(sx), tonumber(sy))
-            if piece.move then
-                piece:move(tonumber(x), tonumber(y))
-            else
-                local x, y = tonumber(x), tonumber(y)
-                piece:onMoveTo(x, y)
-                self:moveTo(piece, x, y)
-            end
-
-        elseif data:find'^ATTACK:' then
-            local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
-            self:attack(self:getPiecesAt(tonumber(sx), tonumber(sy))[1], tonumber(x), tonumber(y))
-
-        elseif data:find'^ATTACKTO:' then
-            local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
-            local piece = self:getLivingPieceAt(tonumber(sx), tonumber(sy))
-            piece:onAttackTo(tonumber(x), tonumber(y))
-
-        end
-    end)
 end
 
 local white, black = {0.8,0.8,0.8}, {0.2,0.2,0.2}

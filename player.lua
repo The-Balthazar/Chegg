@@ -42,6 +42,9 @@ function player:defeat(instigator)
     if instigator.player~=self.board.otherplayer then
         self.board:endTurn(self)
     end
+    if self.onDefeat then
+        self:onDefeat(instigator)
+    end
 end
 
 function player:setBoard(board)

@@ -33,9 +33,9 @@ function EnetHandle(localHandler)
             comOut:release()
             comOut = nil
             enetThread = nil
-            print('Connection closed', 'connecting')
-            
-        elseif data then
+            print('Connection closed', 'Dissconnecting')
+
+        elseif data and localHandler then
             localHandler(data)
 
         end
@@ -45,5 +45,6 @@ end
 function EnetDisconnect()
     if comOut then
         comOut:push{closeConnection=true}
+        return true
     end
 end

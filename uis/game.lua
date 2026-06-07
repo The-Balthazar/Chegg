@@ -4,13 +4,48 @@ game.__index = game
 function game:new()
     setmetatable(self, game)
 
+    local function endscreen(player, instigator)
+        if self.gameover then return end
+        self.gameover = true
+        table.insert(self.activepreview.buttons,{
+            xy = function() return love.graphics.getWidth()/2-250, 400 end,
+            widthheight = function() return 200, 60 end,
+            press = function()
+                setMode(require'uis.mainmenu'.new{})
+                EnetDisconnect()
+            end,
+            text = ('Main menu'):lower(),
+        })
+        table.insert(self.activepreview.buttons,{
+            xy = function() return love.graphics.getWidth()/2+50, 400 end,
+            widthheight = function() return 200, 60 end,
+            press = function()
+                setMode(require'uis.game'.new{
+                    deck = self.localplayer.startingDeck,
+                    isStartingPlayer = not self.isStartingPlayer,
+                    opponentType = self.activeboard.othertype,
+                    opponentDeck = self.otherplayer.startingDeck,
+                })
+                if self.activeboard.othertype=='remote' then
+                    love.thread.getChannel'comOut':push('RESTART')
+                end
+            end,
+            activeIf = function() return not self.otherDisconnected end,
+            text = ('Rematch'):lower(),
+        })
+    end
+
     self.localplayer = require'player'.new{
         deck = self.deck,
+        startingDeck = table.copy(self.deck),
+        onDefeat = endscreen,
     }
 
     if self.opponentDeck then
         self.otherplayer = require'player'.new{
             deck = self.opponentDeck,
+            startingDeck = table.copy(self.opponentDeck),
+            onDefeat = endscreen,
         }
     end
 
@@ -59,6 +94,74 @@ function game:update(delta)
     if self.activeboard then
         self.activeboard:update(delta)
     end
+    EnetHandle(function(data)
+        if data=='MSG: disconnected' then
+            self.otherDisconnected = true
+            if not self.gameover then
+                table.insert(self.activepreview.buttons,{
+                    xy = function() return love.graphics.getWidth()/2-300, 400 end,
+                    widthheight = function() return 600, 60 end,
+                    press = function()
+                        setMode(require'uis.mainmenu'.new{})
+                        EnetDisconnect()
+                    end,
+                    text = ('Other player disconnected - main menu'):lower(),
+                })
+            end
+            EnetDisconnect()
+        elseif data=='MSG: connection timed out' then
+            self.otherDisconnected = true
+            if not self.gameover then
+                table.insert(self.activepreview.buttons,{
+                    xy = function() return love.graphics.getWidth()/2-300, 400 end,
+                    widthheight = function() return 600, 60 end,
+                    press = function()
+                        setMode(require'uis.mainmenu'.new{})
+                        EnetDisconnect()
+                    end,
+                    text = ('Other player timed out - main menu'):lower(),
+                })
+            end
+        elseif data=='RESTART' and (self.otherplayer.dead or self.localplayer.dead) then --Check dead just as a minimal exploit prevention
+            setMode(require'uis.game'.new{
+                deck = self.localplayer.startingDeck,
+                isStartingPlayer = not self.isStartingPlayer,
+                opponentType = self.activeboard.othertype,
+                opponentDeck = self.otherplayer.startingDeck,
+            })
+        elseif data=='ENDTURN' then
+            if self.activeboard:canEndTurn(self.otherplayer) then
+                self.activeboard:endTurn(self.otherplayer)
+            else
+                error"opponent tried to end turn when they can't?"
+            end
+
+        elseif data:find'^SUMMON:' then
+            local t, x, y = data:match': (%a*) (%d*) (%d*)'
+            self.activeboard:summonAt(self.otherplayer, t, tonumber(x), tonumber(y))
+
+        elseif data:find'^MOVE:' then
+            local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
+            local piece = self.activeboard:getLivingPieceAt(tonumber(sx), tonumber(sy))
+            if piece.move then
+                piece:move(tonumber(x), tonumber(y))
+            else
+                local x, y = tonumber(x), tonumber(y)
+                piece:onMoveTo(x, y)
+                self.activeboard:moveTo(piece, x, y)
+            end
+
+        elseif data:find'^ATTACK:' then
+            local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
+            self.activeboard:attack(self.activeboard:getPiecesAt(tonumber(sx), tonumber(sy))[1], tonumber(x), tonumber(y))
+
+        elseif data:find'^ATTACKTO:' then
+            local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
+            local piece = self.activeboard:getLivingPieceAt(tonumber(sx), tonumber(sy))
+            piece:onAttackTo(tonumber(x), tonumber(y))
+
+        end
+    end)
 end
 
 local text = love.graphics.newImageFont('bigtext.png', ' abcdefghijklmnopqrstuvwxyz!?')

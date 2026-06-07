@@ -65,3 +65,10 @@ function love.textinput(...)
         activeMode:textinput(...)
     end
 end
+
+function love.quit()
+    if EnetDisconnect and EnetDisconnect() then
+        EnetHandle()
+    end
+end
+
