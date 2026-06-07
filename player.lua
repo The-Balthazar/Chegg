@@ -39,7 +39,9 @@ function player:defeat(instigator)
         summon:kill()
     end
     self.dead = true
-    self.board:endTurn(self)
+    if instigator.player~=self.board.otherplayer then
+        self.board:endTurn(self)
+    end
 end
 
 function player:setBoard(board)
