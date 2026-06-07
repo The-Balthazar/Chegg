@@ -89,6 +89,7 @@ local piecetypes = {
         quad = genQuad(1, 1),
         quadM = genQuad(9, 2),
         quadA = genQuad(10, 2),
+        quadU = genQuad(1, 8),
         image = spriteAtlas,
         teleportImmune = true,
         attackEffect = function(self, targetX, targetY)
@@ -118,6 +119,7 @@ local piecetypes = {
         quad = genQuad(2, 1),
         quadM = genQuad(1, 3),
         quadA = genQuad(2, 3),
+        quadU = genQuad(2, 8),
         image = spriteAtlas,
         canTravelTo = function(self, targetX, targetY)
             return
@@ -148,6 +150,7 @@ local piecetypes = {
         quad = genQuad(3, 1),
         quadM = genQuad(3, 3),
         quadA = genQuad(4, 3),
+        quadU = genQuad(3, 8),
         image = spriteAtlas,
         getAttackSplash = function(self, targetX, targetY)
             return  self.pos[1], self.pos[2],
@@ -180,6 +183,7 @@ local piecetypes = {
         canAttackTo = nope,
         quad = genQuad(4, 1),
         quadM = genQuad(5, 3),
+        quadU = genQuad(4, 8),
         image = spriteAtlas,
         onSummon = function(self)
             self.player:draw()
@@ -199,6 +203,7 @@ local piecetypes = {
         dashCost = 1,
         quad = genQuad(5, 1),
         quadM = genQuad(6, 3),
+        quadU = genQuad(5, 8),
         image = spriteAtlas,
         canTravelTo = function(self, targetX, targetY)
             local x, y = math.abs(self.pos[1]-targetX), math.abs(self.pos[2]-targetY)
@@ -225,6 +230,7 @@ local piecetypes = {
         quad = genQuad(6, 1),
         quadM = genQuad(7, 3),
         quadA = genQuad(8, 3),
+        quadU = genQuad(6, 8),
         image = spriteAtlas,
         canAttackTo = function(self, targetX, targetY)
             local x, y = math.abs(self.pos[1]-targetX)==1, math.abs(self.pos[2]-targetY)==1
@@ -261,6 +267,7 @@ local piecetypes = {
         quad = genQuad(7, 1),
         quadM = genQuad(9, 3),
         quadA = genQuad(10, 3),
+        quadU = genQuad(7, 8),
         image = spriteAtlas,
         getAttackSplash = function(self, targetX, targetY)
             local x = self.pos[1]==targetX and 1 or 0
@@ -288,6 +295,7 @@ local piecetypes = {
         quad = genQuad(8, 1),
         quadM = genQuad(1, 4),
         quadA = genQuad(2, 4),
+        quadU = genQuad(8, 8),
         image = spriteAtlas,
         canTravelTo = function(self, targetX, targetY)
             local x, y = math.abs(self.pos[1]-targetX), math.abs(self.pos[2]-targetY)
@@ -331,6 +339,7 @@ local piecetypes = {
         quad = genQuad(9, 1),
         quadM = genQuad(3, 4),
         quadA = genQuad(4, 4),
+        quadU = genQuad(9, 8),
         image = spriteAtlas,
         canTravelTo = basic1cardinalMove,
         canAttackTo = nearestDiagonalAttack,
@@ -361,6 +370,7 @@ local piecetypes = {
         quad = genQuad(10, 1),
         quadM = genQuad(5, 4),
         quadA = genQuad(6, 4),
+        quadU = genQuad(10, 8),
         image = spriteAtlas,
         canTravelTo = function(self, targetX, targetY)
             local x, y = math.abs(self.pos[1]-targetX)==1, math.abs(self.pos[2]-targetY)==1
@@ -393,6 +403,7 @@ local piecetypes = {
         quad = genQuad(1, 2),
         quadM = genQuad(7, 4),
         quadA = genQuad(8, 4),
+        quadU = genQuad(1, 9),
         image = spriteAtlas,
         canTravelTo = function(self, targetX, targetY)
             local x, y = targetX%2, targetY%2
@@ -424,6 +435,7 @@ local piecetypes = {
         quad = genQuad(2, 2),
         quadM = genQuad(9, 4),
         quadA = genQuad(10, 4),
+        quadU = genQuad(2, 9),
         image = spriteAtlas,
         canTravelTo = function(self, targetX, targetY)
             local x, y = math.abs(self.pos[1]-targetX), math.abs(self.pos[2]-targetY)
@@ -463,6 +475,7 @@ local piecetypes = {
         quad = genQuad(3, 2),
         quadM = genQuad(1, 5),
         quadA = genQuad(2, 5),
+        quadU = genQuad(3, 9),
         image = spriteAtlas,
         canTravelTo = function(self, targetX, targetY)
             local x, y = math.abs(self.pos[1]-targetX), math.abs(self.pos[2]-targetY)
@@ -486,6 +499,7 @@ local piecetypes = {
         attackMoveOnly = true,
         quad = genQuad(4, 2),
         quadM = genQuad(3, 5),
+        quadU = genQuad(4, 9),
         image = spriteAtlas,
         canTravelTo = function(self, targetX, targetY)
             if not self.board:getLivingPieceAt(targetX, targetY) then return end
@@ -522,6 +536,7 @@ local piecetypes = {
     --     quad = genQuad(5, 2),
     --     quadM = genQuad(4, 5),
     --     quadA = genQuad(5, 5),
+    --     quadU = genQuad(5, 9),
     --     image = spriteAtlas,
     --     canTravelTo = function(self, targetX, targetY)
     --         local xy = math.abs(self.pos[1]-targetX)+math.abs(self.pos[2]-targetY)
@@ -537,6 +552,7 @@ local piecetypes = {
         moveRange = 0,
         attackRange = 0,
         quad = genQuad(6, 2),
+        quadU = genQuad(6, 9),
         image = spriteAtlas,
         canTravelTo = nope,
         canAttackTo = nope,
@@ -557,6 +573,7 @@ local piecetypes = {
     --     canAttackTo = nope,
     --     quad = genQuad(7, 2),
     --     quadM = genQuad(6, 5),
+    --     quadU = genQuad(7, 9),
     --     image = spriteAtlas,
     --     onSummon = function(self)
     --         local enemy = self.board:getOpponent(self.player)
@@ -586,6 +603,7 @@ local piecetypes = {
         quad = genQuad(8, 2),
         quadM = genQuad(7, 5),
         quadA = genQuad(8, 5),
+        quadU = genQuad(8, 9),
         image = spriteAtlas,
         getSpawnSplash = range1estimate,
         getAttackSplash = function(self, targetX, targetY)
@@ -771,6 +789,12 @@ local hsvcolour = love.graphics.newShader'hsvcolour.vs'
 
 function piece:draw(boardXPos, boardYPos, gridXPos, gridYPos)
     local opponent = self.player~=self.board.localplayer
+    if opponent then
+        love.graphics.setColor(1,0,0)
+    else
+        love.graphics.setColor(0,0,1)
+    end
+    love.graphics.draw(spriteAtlas, piecetypes[self.type].quadU, gridXPos, gridYPos+self.board.scale*spriteSize*0.25, (self.rotation or 0)+(opponent and math.pi or 0), self.board.scale, self.board.scale, spriteSize/2, spriteSize*(opponent and 0.25 or 0.75))
     love.graphics.setShader(hsvcolour)
     local v = self:canMove() and 1 or self:canSpecial() and 0.5 or 0
     love.graphics.setColor(1, v, 0.5+0.5*v)
