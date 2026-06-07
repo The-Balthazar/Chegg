@@ -62,6 +62,7 @@ function player:draw()
     if self.dead then return end
     if not self.hand or not self.deck or not self.deck[1] then return end
     table.insert(self.hand, table.remove(self.deck))
+    sounds.play('paper_grab', 1, 0.95+0.1*love.math.random())
     return true
 end
 

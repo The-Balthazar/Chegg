@@ -2,6 +2,7 @@ local activeMode
 
 function love.load()
     require'utils'
+    require'sounds'
 
     spriteAtlas = love.graphics.newImage'sprites.png'
     spriteAtlas:setFilter('nearest', 'nearest')

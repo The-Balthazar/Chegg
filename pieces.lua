@@ -86,6 +86,10 @@ local piecetypes = {
         attackCost = 1,
         canTravelTo = basic1move,
         canAttackTo = basic1attack,
+        soundMove = 'shwing',
+        soundDeath = 'metal_hit_reverb',
+        soundAttack = 'shwing',
+        soundSummon = 'shwing',
         quad = genQuad(1, 1),
         quadM = genQuad(9, 2),
         quadA = genQuad(10, 2),
@@ -116,6 +120,10 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
+        soundMove = '',
+        soundDeath = 'bug_hit',
+        soundAttack = '',
+        soundSummon = '',
         quad = genQuad(2, 1),
         quadM = genQuad(1, 3),
         quadA = genQuad(2, 3),
@@ -144,6 +152,10 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
+        soundMove = '',
+        soundDeath = 'bug_hit',
+        soundAttack = 'fireball',
+        soundSummon = '',
         canTravelTo = basic1move,
         canAttackTo = basic1attack,
         attackEffect = FX_explosion,
@@ -179,6 +191,10 @@ local piecetypes = {
         attackRange = 0,
         moveCost = 0,
         dashCost = 1,
+        soundMove = '',
+        soundDeath = 'bug_hit',
+        soundAttack = '',
+        soundSummon = '',
         canTravelTo = basic1move,
         canAttackTo = nope,
         quad = genQuad(4, 1),
@@ -201,6 +217,10 @@ local piecetypes = {
         attackRange = 0,
         moveCost = 0,
         dashCost = 1,
+        soundMove = '',
+        soundDeath = 'bug_hit',
+        soundAttack = '',
+        soundSummon = '',
         quad = genQuad(5, 1),
         quadM = genQuad(6, 3),
         quadU = genQuad(5, 8),
@@ -226,6 +246,10 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
+        soundMove = '',
+        soundDeath = 'bug_hit',
+        soundAttack = '',
+        soundSummon = '',
         canTravelTo = basic1cardinalMove,
         quad = genQuad(6, 1),
         quadM = genQuad(7, 3),
@@ -262,6 +286,10 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
+        soundMove = 'wood_footstep_medium',
+        soundDeath = 'wood_footstep_heavy',
+        soundAttack = 'wood_footstep_heavy',
+        soundSummon = 'wood_footstep_medium',
         canTravelTo = basic1move,
         canAttackTo = basic1cardinalAttack,
         quad = genQuad(7, 1),
@@ -292,6 +320,10 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
+        soundMove = '',
+        soundDeath = 'bug_hit',
+        soundAttack = '',
+        soundSummon = '',
         quad = genQuad(8, 1),
         quadM = genQuad(1, 4),
         quadA = genQuad(2, 4),
@@ -336,6 +368,10 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
+        soundMove = 'skeleton_hurt',
+        soundDeath = 'skeleton_death',
+        soundAttack = 'skeleton_hurt',
+        soundSummon = 'skeleton_hurt',
         quad = genQuad(9, 1),
         quadM = genQuad(3, 4),
         quadA = genQuad(4, 4),
@@ -367,6 +403,10 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
+        soundMove = 'fire_ignite',
+        soundDeath = 'fire_ignite',
+        soundAttack = 'fireball',
+        soundSummon = 'fireball',
         quad = genQuad(10, 1),
         quadM = genQuad(5, 4),
         quadA = genQuad(6, 4),
@@ -399,6 +439,10 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
+        soundMove = '',
+        soundDeath = 'bug_hit',
+        soundAttack = '',
+        soundSummon = '',
         attackMoveOnly = true,
         quad = genQuad(1, 2),
         quadM = genQuad(7, 4),
@@ -432,6 +476,10 @@ local piecetypes = {
         attackRange = 1,
         dashCost = 1,
         attackCost = 1,
+        soundMove = 'woosh',
+        soundDeath = 'bug_hit',
+        soundAttack = '',
+        soundSummon = '',
         quad = genQuad(2, 2),
         quadM = genQuad(9, 4),
         quadA = genQuad(10, 4),
@@ -472,6 +520,10 @@ local piecetypes = {
         dashCost = 1,
         attackCost = 1,
         attackMoveOnly = true,
+        soundMove = 'slime_squelch',
+        soundDeath = 'slime_death',
+        soundAttack = 'slime_squelch',
+        soundSummon = 'slime_light_squelch',
         quad = genQuad(3, 2),
         quadM = genQuad(1, 5),
         quadA = genQuad(2, 5),
@@ -497,6 +549,10 @@ local piecetypes = {
         moveCost = 0,
         attackCost = 1,
         attackMoveOnly = true,
+        soundMove = 'woosh',
+        soundDeath = 'book_grab',
+        soundAttack = 'woosh',
+        soundSummon = '',
         quad = genQuad(4, 2),
         quadM = genQuad(3, 5),
         quadU = genQuad(4, 9),
@@ -533,6 +589,10 @@ local piecetypes = {
     --     moveCost = 0,
     --     dashCost = 1,
     --     attackCost = 1,
+        -- soundMove = '',
+        -- soundDeath = 'bug_hit',
+        -- soundAttack = '',
+        -- soundSummon = '',
     --     quad = genQuad(5, 2),
     --     quadM = genQuad(4, 5),
     --     quadA = genQuad(5, 5),
@@ -551,6 +611,10 @@ local piecetypes = {
         deck = true,
         moveRange = 0,
         attackRange = 0,
+        soundMove = '',
+        soundDeath = 'bug_hit',
+        soundAttack = '',
+        soundSummon = '',
         quad = genQuad(6, 2),
         quadU = genQuad(6, 9),
         image = spriteAtlas,
@@ -571,6 +635,10 @@ local piecetypes = {
     --     dashCost = 1,
     --     canTravelTo = basic1move,
     --     canAttackTo = nope,
+        -- soundMove = '',
+        -- soundDeath = 'bug_hit',
+        -- soundAttack = '',
+        -- soundSummon = '',
     --     quad = genQuad(7, 2),
     --     quadM = genQuad(6, 5),
     --     quadU = genQuad(7, 9),
@@ -598,6 +666,10 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 2,
+        soundMove = '',
+        soundDeath = 'bug_hit',
+        soundAttack = 'fireball',
+        soundSummon = 'fireball',
         canTravelTo = basic1move,
         canAttackTo = nearestCardinalAttack,
         quad = genQuad(8, 2),
@@ -692,6 +764,10 @@ function piece:new()
         typeData.onSummon(self)
     end
 
+    local hasSS = typeData.soundSummon and typeData.soundSummon~=''
+    sounds.play('woosh', hasSS and 0.35 or 1, 0.95+0.1*love.math.random())
+    sounds.play(typeData.soundSummon, 1, 0.95+0.1*love.math.random())
+
     return self
 end
 
@@ -735,6 +811,7 @@ function piece:onMoveTo(targetX, targetY)
         self.player:takeMana(self.typeData.dashCost)
         self.lastSpecialed = self.board.turn
     end
+    sounds.play(self.typeData.soundMove, 1, 0.95+0.1*love.math.random())
 end
 
 function piece:canAttackTo(targetX, targetY)
@@ -755,6 +832,7 @@ function piece:onAttackTo(targetX, targetY)
     end
     self.player:takeMana(self.typeData.attackCost)
     self.lastSpecialed = self.board.turn
+    sounds.play(self.typeData.soundAttack, 1, 0.95+0.1*love.math.random())
 end
 
 function piece:update(delta)
@@ -781,6 +859,7 @@ function piece:kill(instigator)
     if self.player then
         self.player:removeSummon(self)
     end
+    sounds.play(self.typeData.soundDeath, 1, 0.95+0.1*love.math.random())
 end
 
 local summonSickSpiral = genQuad(9, 7)
