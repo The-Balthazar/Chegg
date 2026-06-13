@@ -83,6 +83,14 @@ function game:new()
                 return require'pieces'.getTypeData(piece.type)
             end
         end,
+        getPreviewItemAttack = function()
+            local piece = self.activeboard:getSelectedPiece()
+            if piece and piece.attackAs then
+                return require'pieces'.getTypeData(piece.attackAs)
+            elseif piece then
+                return require'pieces'.getTypeData(piece.type)
+            end
+        end,
         getManaCount = function() return self.localplayer:getMana() end,
         getTurnNumber = function() return self.activeboard.turn end,
         getHand = function() return self.localplayer:getHand() end,

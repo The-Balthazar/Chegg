@@ -77,7 +77,7 @@ end
 local piecetypes = {
     king = {
         name = 'King',
-        desc = 'The players avatar, death constitutes a game loss for its controller.\n\nIts normally free move costs 1.\n\nIt can move to or attack any space within 1 range.',
+        desc = 'The players avatar, death constitutes a game loss for its controller.\n\nIt can move to or attack any space within 1 range.',
         cost = 0,
         moveRange = 1,
         attackRange = 1,
@@ -443,7 +443,7 @@ local piecetypes = {
         soundDeath = 'bug_hit',
         soundAttack = '',
         soundSummon = '',
-        attackMoveOnly = true,
+        attackMove = true,
         quad = genQuad(1, 2),
         quadM = genQuad(7, 4),
         quadA = genQuad(8, 4),
@@ -519,7 +519,7 @@ local piecetypes = {
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
-        attackMoveOnly = true,
+        attackMove = true,
         soundMove = 'slime_squelch',
         soundDeath = 'slime_death',
         soundAttack = 'slime_squelch',
@@ -548,6 +548,7 @@ local piecetypes = {
         moveRange = 2,
         moveCost = 0,
         attackCost = 1,
+        attackMove = true,
         attackMoveOnly = true,
         soundMove = 'woosh',
         soundDeath = 'book_grab',
@@ -658,7 +659,7 @@ local piecetypes = {
     -- },
     wither = {
         name = 'Wither',
-        desc = 'On summon the Wither explodes, killing anything within 1 range.\n\nIt can move 1 in any direction, and can attack the nearest creature down a given cardinal direction, up to 3 spaces away. This attack costs 2, and inflicts splash damage to the 4 adjacent tiles.',
+        desc = 'On summon the Wither explodes, killing anything within 1 range.\n\nIt can move 1 in any direction, and can attack the nearest creature down a given cardinal direction, up to 3 spaces away. This inflicts splash damage to the 4 adjacent tiles.',
         cost = 6,
         deck = true,
         moveRange = 1,
@@ -817,7 +818,7 @@ end
 function piece:canAttackTo(targetX, targetY)
     if self.dead then return end
     if not self.board:isActivePlayer(self.player) then return end
-    if self.typeData.attackMoveOnly then return end
+    if self.typeData.attackMove then return end
     if not (self:canAttack()) then return end
     if not self.typeData.attackRange or self.typeData.attackRange==0 then return end
     if self.pos[1]==targetX and self.pos[2]==targetY then return end

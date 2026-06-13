@@ -24,6 +24,7 @@ local handCardPreview, handHoverIndex, handPressIndex
 function preview:draw()
     if handCardPreview or self.getPreviewItem then
         local item = handCardPreview or self.getPreviewItem()
+        local attack = handCardPreview or self.getPreviewItemAttack()
         local width, height = 340, 520
         local x, y = love.graphics.getWidth()-width, love.graphics.getHeight()/2-height/2
         if item then
@@ -39,12 +40,24 @@ function preview:draw()
             if item.quadM then
                 love.graphics.draw(item.image, item.quadM, x+10+110, y+30, 0, 2, 2)
             end
-            if item.quadA then
-                love.graphics.draw(item.image, item.quadA, x+10+220, y+30, 0, 2, 2)
+            if attack.quadA then
+                love.graphics.draw(attack.image, attack.quadA, x+10+220, y+30, 0, 2, 2)
             end
             if item.desc then
                 love.graphics.setColor(0,0,0)
-                love.graphics.printf(('Summon cost: %d\n\n%s'):lower():format(item.cost, item.desc:lower()), text, x+10, y+135, width/2-10, 'left', 0, 2, 2)
+                local extraText = ''
+                if item.moveCost and not item.attackMoveOnly then
+                    extraText = extraText..('Move cost: %d\n'):lower():format(item.moveCost)
+                end
+                if item.dashCost then
+                    extraText = extraText..('Dash cost: %d\n'):lower():format(item.dashCost)
+                end
+                if item.attackMove then
+                    extraText = extraText..('Attack-move cost: %d\n'):lower():format(item.attackCost)
+                elseif attack.attackCost then
+                    extraText = extraText..('Attack cost: %d\n'):lower():format(attack.attackCost)
+                end
+                love.graphics.printf(('Summon cost: %d\n%s\n%s'):lower():format(item.cost, extraText, item.desc:lower()), text, x+10, y+135, width/2-10, 'left', 0, 2, 2)
             end
         end
     end

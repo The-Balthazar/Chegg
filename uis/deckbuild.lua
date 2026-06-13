@@ -74,6 +74,9 @@ function deckbuild:new()
         getPreviewItem = function()
             return self.cardsHash[previewItem]
         end,
+        getPreviewItemAttack = function()
+            return self.cardsHash[previewItem]
+        end,
         buttons = {
             {
                 xy = function()
