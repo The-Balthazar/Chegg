@@ -41,6 +41,12 @@ local function nearestCardinalAttack(self, targetX, targetY)
     return true
 end
 
+local function nearestCardinalAttackWithinRange(self, targetX, targetY)
+    local x, y = math.abs(self.pos[1]-targetX), math.abs(self.pos[2]-targetY)
+    if self.attackRange<x or self.attackRange<y then return end
+    return nearestCardinalAttack(self, targetX, targetY)
+end
+
 local function nearestDiagonalAttack(self, targetX, targetY)
     if not (math.abs(self.pos[1]-targetX)==math.abs(self.pos[2]-targetY)) then return end
     if not self.board:getLivingPieceAt(targetX, targetY) then return end
@@ -54,6 +60,12 @@ local function nearestDiagonalAttack(self, targetX, targetY)
         ) then return end
     end
     return true
+end
+
+local function nearestDiagonalAttackWithinRange(self, targetX, targetY)
+    local x, y = math.abs(self.pos[1]-targetX), math.abs(self.pos[2]-targetY)
+    if self.attackRange<x or self.attackRange<y then return end
+    return nearestDiagonalAttackAttack(self, targetX, targetY)
 end
 
 local function range1estimate(self, targetX, targetY)
@@ -378,7 +390,7 @@ local piecetypes = {
         quadU = genQuad(9, 8),
         image = spriteAtlas,
         canTravelTo = basic1cardinalMove,
-        canAttackTo = nearestDiagonalAttack,
+        canAttackTo = nearestDiagonalAttackWithinRange,
         attackEffect = function(self, targetX, targetY)
             local board = self.board
             board:createEffectAt('hit', targetX, targetY)
@@ -416,7 +428,7 @@ local piecetypes = {
             local x, y = math.abs(self.pos[1]-targetX)==1, math.abs(self.pos[2]-targetY)==1
             return x and y and not self.board:getLivingPieceAt(targetX, targetY)
         end,
-        canAttackTo = nearestCardinalAttack,
+        canAttackTo = nearestCardinalAttackWithinRange,
         attackEffect = function(self, targetX, targetY)
             local board = self.board
             board:createEffectAt('fireball', targetX, targetY)
@@ -672,7 +684,7 @@ local piecetypes = {
         soundAttack = 'fireball',
         soundSummon = 'fireball',
         canTravelTo = basic1move,
-        canAttackTo = nearestCardinalAttack,
+        canAttackTo = nearestCardinalAttackWithinRange,
         quad = genQuad(8, 2),
         quadM = genQuad(7, 5),
         quadA = genQuad(8, 5),
