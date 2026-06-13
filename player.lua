@@ -122,6 +122,16 @@ function player:startTurn()
     return true
 end
 
+function player:endTurn()
+    for i, summon in ipairs(self.summons) do
+        if summon.onEndTurn then
+            summon:onEndTurn()
+        end
+    end
+    self.mana = 0
+    return true
+end
+
 function player:takeMana(count)
     if self.dead then return end
     if count>self.mana then return end

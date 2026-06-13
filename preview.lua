@@ -52,10 +52,13 @@ function preview:draw()
                 if item.dashCost then
                     extraText = extraText..('Dash cost: %d\n'):lower():format(item.dashCost)
                 end
-                if item.attackMove then
+                if attack.attackMove then
                     extraText = extraText..('Attack-move cost: %d\n'):lower():format(item.attackCost)
                 elseif attack.attackCost then
                     extraText = extraText..('Attack cost: %d\n'):lower():format(attack.attackCost)
+                end
+                if attack.attackDamage==0 then
+                    extraText = extraText..('Attack damage: %d\n'):lower():format(attack.attackDamage)
                 end
                 love.graphics.printf(('Summon cost: %d\n%s\n%s'):lower():format(item.cost, extraText, item.desc:lower()), text, x+10, y+135, width/2-10, 'left', 0, 2, 2)
             end

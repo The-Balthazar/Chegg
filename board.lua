@@ -262,7 +262,7 @@ function board:endTurn(activeplayer)
     self.turn = self.turn+1
     local other = self:getOpponent(activeplayer)
 
-    activeplayer.mana = 0
+    activeplayer:endTurn()
 
     if other and not other.dead then
         self:sendData(activeplayer, 'ENDTURN')
@@ -486,6 +486,7 @@ function board:attackWithPiece(player, piece, x, y)
     if piece.player~=player then return end
     if not piece:canAttackTo(x, y) then return end
     if self:getLivingPieceAt(x, y) then
+        if piece:getAttackDamage(x, y)==0 then return piece:onAttackTo(x, y) end
         piece:onAttackTo(x, y)
         if piece.getAttackSplash then
             local coords = {piece:getAttackSplash(x, y)}
@@ -495,6 +496,9 @@ function board:attackWithPiece(player, piece, x, y)
             end
         else
             self:attack(piece, x, y)
+        end
+        if piece.onFinishAttackTo then
+            piece:onFinishAttackTo(x, y)
         end
         return true
     end

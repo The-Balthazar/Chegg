@@ -86,7 +86,7 @@ local function FX_explosion(self, targetX, targetY)
     board:createEffectAt('explosion', targetX, targetY)
 end
 
-local piecetypes = {
+local piecetypes; piecetypes = {
     king = {
         name = 'King',
         desc = 'The players avatar, death constitutes a game loss for its controller.\n\nIt can move to or attack any space within 1 range.',
@@ -324,11 +324,12 @@ local piecetypes = {
     },
     frog = {
         name = 'Frog',
-        desc = 'Frogs can jump to any space up to 2 cardinally adjacent spaces away.\n\nTheir attack doesn\'t deal damage, but can pull the nearest creature in a given cardinal direction 2 spaces towards them.',
+        desc = 'Frogs can jump to any space up to 2 cardinally adjacent spaces away.\n\nTheir attack can pulls the nearest creature in a given cardinal direction 2 spaces towards them.',
         cost = 2,
         deck = true,
         moveRange = 2,
         attackRange = 10,
+        attackDamage = 0,
         moveCost = 0,
         dashCost = 1,
         attackCost = 1,
@@ -349,14 +350,14 @@ local piecetypes = {
             local x, y = math.abs(self.pos[1]-targetX), math.abs(self.pos[2]-targetY)
             return x+y>1 and nearestCardinalAttack(self, targetX, targetY)
         end,
-        attack = function(self, target)
+        onAttackTo = function(self, targetX, targetY)
             local board = self.board
+            local target = board:getLivingPieceAt(targetX, targetY)
             local tX, tY = unpack(target.pos)
             local sX, sY = unpack(self.pos)
             local rX, rY = tX-sX, tY-sY
             local mX, mY = math.abs(rX)==2 and 1 or 2, math.abs(rY)==2 and 1 or 2
             board:moveNoSend(target, tX-math.clamp(rX, -mX, mX), tY-math.clamp(rY, -mY, mY))
-            return true
         end,
         -- attackAreaPreview = function(self, targetX, targetY)
         --     local coords = {}
@@ -567,7 +568,7 @@ local piecetypes = {
         soundAttack = 'woosh',
         soundSummon = '',
         quad = genQuad(4, 2),
-        quadM = genQuad(3, 5),
+        quadA = genQuad(3, 5),
         quadU = genQuad(4, 9),
         image = spriteAtlas,
         canTravelTo = function(self, targetX, targetY)
@@ -592,31 +593,80 @@ local piecetypes = {
             end
         end,
     },
-    -- parrot = {
-    --     name = 'Parrot',
-    --     desc = 'Parrots can jump to any space up to 2 cardinally adjacent spaces away or 2 spaces away diagonally. They can copy the attack of a laterally adjacent non-parrot creature, prioritising the closest to the edge of the board.',
-    --     cost = 5,
-    --     deck = true,
-    --     moveRange = 2,
-    --     attackRange = 0,
-    --     moveCost = 0,
-    --     dashCost = 1,
-    --     attackCost = 1,
-        -- soundMove = '',
-        -- soundDeath = 'bug_hit',
-        -- soundAttack = '',
-        -- soundSummon = '',
-    --     quad = genQuad(5, 2),
-    --     quadM = genQuad(4, 5),
-    --     quadA = genQuad(5, 5),
-    --     quadU = genQuad(5, 9),
-    --     image = spriteAtlas,
-    --     canTravelTo = function(self, targetX, targetY)
-    --         local xy = math.abs(self.pos[1]-targetX)+math.abs(self.pos[2]-targetY)
-    --         return (xy==4 or xy==2 or xy==1) and not self.board:getLivingPieceAt(targetX, targetY)
-    --     end,
-    --     --canAttackTo -- TODO
-    -- },
+    parrot = {
+        name = 'Parrot',
+        desc = 'Parrots can fly up to 2 spaces away in a directly straight or diagonal line. The first time they target a laterally adjacent non-parrot creature, it copies how they would attack for rest of the turn.',
+        cost = 5,
+        deck = true,
+        moveRange = 2,
+        attackRange = 1,
+        moveCost = 0,
+        dashCost = 1,
+        attackCost = 0,
+        soundMove = '',
+        soundDeath = 'bug_hit',
+        soundAttack = '',
+        soundSummon = '',
+        quad = genQuad(5, 2),
+        quadM = genQuad(4, 5),
+        quadA = genQuad(5, 5),
+        quadU = genQuad(5, 9),
+        image = spriteAtlas,
+        canTravelTo = function(self, targetX, targetY)
+            local occupant = self.board:getLivingPieceAt(targetX, targetY)
+            if self.attackAs and self.attackMove and occupant then
+                return piecetypes[self.attackAs].canTravelTo(self, targetX, targetY)
+            end
+            local xy = math.abs(self.pos[1]-targetX)+math.abs(self.pos[2]-targetY)
+            return (xy==4 or xy==2 or xy==1) and not occupant
+        end,
+        canAttackTo = function(self, targetX, targetY)
+            if not self.attackAs then
+                if self.pos[2]==targetY and (self.pos[1]==targetX-1 or self.pos[1]==targetX+1) then
+                    local target = self.board:getLivingPieceAt(targetX, targetY)
+                    return target and target.type~='parrot' and piecetypes[target.type].attackRange~=0
+                end
+                return
+            end
+            return piecetypes[self.attackAs].canAttackTo and piecetypes[self.attackAs].canAttackTo(self, targetX, targetY)
+        end,
+        onAttackTo = function(self, targetX, targetY)
+            if not self.attackAs then
+                local target = self.board:getLivingPieceAt(targetX, targetY)
+                if target and target.type~='parrot' then
+                    self:setAttackAs(target.type)
+                end
+                return true
+            end
+            sounds.play(piecetypes[self.attackAs].soundAttack, 1, 0.95+0.1*love.math.random())
+            return piecetypes[self.attackAs].onAttackTo and piecetypes[self.attackAs].onAttackTo(self, targetX, targetY)
+        end,
+        attackEffect = function(self, ...)
+            return self.attackAs and piecetypes[self.attackAs].attackEffect and piecetypes[self.attackAs].attackEffect(self, ...)
+        end,
+        attackDamage = 0,
+        getAttackSplash = function(self, targetX, targetY)
+            if self.attackAs and piecetypes[self.attackAs].getAttackSplash then
+                return piecetypes[self.attackAs].getAttackSplash(self, targetX, targetY)
+            end
+            return targetX, targetY
+        end,
+        attackAreaPreview = function(self, targetX, targetY)
+            if self.attackAs and piecetypes[self.attackAs].attackAreaPreview then
+                return piecetypes[self.attackAs].attackAreaPreview(self, targetX, targetY)
+            end
+            return targetX, targetY
+        end,
+        onStartTurn = function(self)
+            self:setAttackAs()
+        end,
+        onFinishAttackTo = function(self, targetX, targetY)
+            self:setAttackAs()
+        end,
+        onEndTurn = function(self)
+            self:setAttackAs()
+        end,
+    },
     cat = {
         name = 'Cat',
         desc = 'Cats don\'t move or attack; instead each grant its controller 1 extra mana each turn.',
@@ -753,23 +803,45 @@ function piece.getTypeData(t) return piecetypes[t] end
 
 function piece.getTypesData() return piecetypes end
 
+function piece:setAttackAs(targetType)
+    if targetType then
+        self.attackAs = targetType
+        self.attackMove = piecetypes[targetType].attackMove
+        self.attackCost = piecetypes[targetType].attackCost
+        self.attackRange = piecetypes[targetType].attackRange
+        self.attackDamage = piecetypes[targetType].attackDamage
+        self.attackHighlightColour = piecetypes[targetType].attackHighlightColour
+        self.attackMoveHighlightColour = piecetypes[targetType].attackMoveHighlightColour
+    else
+        self.attackAs = nil
+        self.attackMove = self.typeData.attackMove
+        self.attackCost = self.typeData.attackCost
+        self.attackRange = self.typeData.attackRange
+        self.attackDamage = self.typeData.attackDamage
+        self.attackHighlightColour = self.typeData.attackHighlightColour
+        self.attackMoveHighlightColour = self.typeData.attackMoveHighlightColour
+    end
+end
+
 function piece:new()
     local new = setmetatable(self, piece)
 
     local pType = self.type or 'error'
     local typeData = piecetypes[pType]
 
+    self.typeData = typeData
     self.getAttackSplash = typeData.getAttackSplash
     self.moveRange = typeData.moveRange
-    self.attackMoveHighlightColour = typeData.attackMoveHighlightColour
-    self.attackHighlightColour = typeData.attackHighlightColour
     self.attackAreaPreview = typeData.attackAreaPreview
-    self.attackRange = typeData.attackRange
     self.attackEffect = typeData.attackEffect
     self.move = typeData.move
     self.attack = typeData.attack
-    self.typeData = typeData
     self.onStartTurn = typeData.onStartTurn
+    self.onFinishAttackTo = typeData.onFinishAttackTo
+    self.onEndTurn = typeData.onEndTurn
+    self.attackCost = typeData.attackCost
+
+    self:setAttackAs()
 
     self.player:insertSummon(self)
 
@@ -796,12 +868,12 @@ end
 
 function piece:canAttack()
     if self:hasSummoningSickness() then return end
-    return (self.typeData.attackCost and self.typeData.attackCost<=self.player.mana) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
+    return (self.attackCost and self.attackCost<=self.player.mana) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
 end
 
 function piece:canSpecial()
     if self:hasSummoningSickness() then return end
-    return ((self.typeData.dashCost and self.typeData.dashCost<=self.player.mana) or (self.typeData.attackCost and self.typeData.attackCost<=self.player.mana)) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
+    return ((self.typeData.dashCost and self.typeData.dashCost<=self.player.mana) or (self.attackCost and self.attackCost<=self.player.mana)) and (not self.lastSpecialed or self.lastSpecialed<self.board.turn)
 end
 
 function piece:canTravelTo(targetX, targetY)
@@ -830,9 +902,9 @@ end
 function piece:canAttackTo(targetX, targetY)
     if self.dead then return end
     if not self.board:isActivePlayer(self.player) then return end
-    if self.typeData.attackMove then return end
+    if self.attackMove then return end
     if not (self:canAttack()) then return end
-    if not self.typeData.attackRange or self.typeData.attackRange==0 then return end
+    if not self.attackRange or self.attackRange==0 then return end
     if self.pos[1]==targetX and self.pos[2]==targetY then return end
     return self.typeData.canAttackTo and self.typeData.canAttackTo(self, targetX, targetY)
 end
@@ -840,12 +912,16 @@ end
 function piece:onAttackTo(targetX, targetY)
     local board = self.board
     board:sendData(self.player, ('ATTACK: %d %d %d %d'):format(board:sendXYXY(self.pos[1], self.pos[2], targetX, targetY)) )
-    if self.typeData.onAttackTo then
-        self.typeData.onAttackTo(self, targetX, targetY)
+    if self.typeData.onAttackTo and self.typeData.onAttackTo(self, targetX, targetY) then
+        return
     end
-    self.player:takeMana(self.typeData.attackCost)
+    self.player:takeMana(self.attackCost)
     self.lastSpecialed = self.board.turn
     sounds.play(self.typeData.soundAttack, 1, 0.95+0.1*love.math.random())
+end
+
+function piece:getAttackDamage(targetX, targetY)
+    return self.attackDamage or 1
 end
 
 function piece:update(delta)
