@@ -224,9 +224,18 @@ local function mouseOverCard(self, x, y)
     end
 end
 
+function preview:sendData(data)
+    if self.board.othertype~='remote' then return end
+    love.thread.getChannel'comOut':push(data)
+end
+
 function preview:mousemoved(x, y, xDelta, yDelta, istouch, intercepted)
     for i, v in ipairs(self.buttons) do v.hover = nil end
+    local oldHandHoverIndex = handHoverIndex
     handHoverIndex = mouseOverCard(self, x, y)
+    if oldHandHoverIndex ~= handHoverIndex then
+        self:sendData(('PREVIEW HOVER: %s'):format(tostring(handHoverIndex)))
+    end
     if handHoverIndex then
         handCardPreview = require'pieces'.getTypeData(self.getHand()[handHoverIndex])
         return true
@@ -248,7 +257,11 @@ end
 
 function preview:mousepressed(x, y, button, istouch, presses, intercepted)
     for i, v in ipairs(self.buttons) do v.hover = nil end
+    local oldHandPressIndex = handPressIndex
     handPressIndex = mouseOverCard(self, x, y)
+    if oldHandPressIndex ~= handPressIndex then
+        self:sendData(('PREVIEW PRESS: %s'):format(tostring(handPressIndex)))
+    end
     if handHoverIndex and not self.board:canSummon(self.player, self.getHand()[handHoverIndex]) then
         handPressIndex = nil
         return true
@@ -284,7 +297,11 @@ function preview:mousereleased(x, y, button, istouch, presses, intercepted)
             end
         end
         handPressIndex = nil
+        self:sendData('PREVIEW PRESS: nil')
         return true
+    end
+    if handPressIndex then
+        self:sendData('PREVIEW PRESS: nil')
     end
     handPressIndex = nil
 end

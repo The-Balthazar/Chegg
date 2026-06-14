@@ -107,6 +107,14 @@ function game:new()
             }
         }
     }
+    if self.otherplayer then
+        self.otherpreview = require'previewother'.new{
+            board = self.activeboard,
+            player = self.otherplayer,
+            getHand = function() return self.otherplayer:getHand() end,
+            getDeckSize = function() return self.otherplayer:getDeckSize() end,
+        }
+    end
     return self
 end
 
@@ -158,6 +166,7 @@ function game:update(delta)
 
         elseif data:find'^SUMMON:' then
             local t, x, y = data:match': (%a*) (%d*) (%d*)'
+            table.remove(self.otherplayer:getHand())--NOTE not actually synced, just for hand count preview
             self.activeboard:summonAt(self.otherplayer, t, tonumber(x), tonumber(y))
 
         elseif data:find'^MOVE:' then
@@ -180,6 +189,19 @@ function game:update(delta)
             local piece = self.activeboard:getLivingPieceAt(tonumber(sx), tonumber(sy))
             piece:onAttackTo(tonumber(x), tonumber(y))
 
+        elseif data:find'^PREVIEW HOVER:' then
+            local val = data:match': (.*)'
+            self.otherpreview:setHandHoverIndex(tonumber(val))
+
+        elseif data:find'^PREVIEW PRESS:' then
+            local val = data:match': (.*)'
+            self.otherpreview:setHandPressIndex(tonumber(val))
+
+        elseif data:find'^BOARD HOVER:' then
+            local x, y = data:match': ([^ ]*) ([^ ]*)'
+            self.activeboard:setOtherHover(tonumber(x), tonumber(y))
+        else
+            print("unused recieved data: ", data)
         end
     end)
 end
@@ -190,6 +212,7 @@ text:setFilter('nearest', 'nearest')
 function game:draw()
     love.graphics.clear(1/2,1/2,1/2)
     if self.activeboard   then self.activeboard:draw()   end
+    if self.otherpreview  then self.otherpreview:draw()  end
     if self.activepreview then self.activepreview:draw() end
     love.graphics.setColor(0,0,0)
     if self.otherplayer and self.otherplayer.dead and not self.localplayer.dead then

@@ -9,6 +9,7 @@ function board:new()
     self.scale = 1
     self.scaleT = 1
     self.hoverTile = {}
+    self.otherHoverTile = {}
 
     self.rows = self.rows or 10
     self.cols = self.cols or 8
@@ -120,6 +121,11 @@ function board:draw()
     if self.hoverTile[1] and self.hoverTile[2] then
         love.graphics.setColor(0.5, 0.5, 0.5, 0.25)
         love.graphics.circle("fill", gridSize*self.scale*(self.hoverTile[1]-0.5)+xPos, gridSize*self.scale*(self.hoverTile[2]-0.5)+yPos, gridSize*self.scale/2)
+    end
+    if self.otherHoverTile[1] and self.otherHoverTile[2] then
+        love.graphics.setLineWidth(self.scale*2.5)
+        love.graphics.setColor(0.5, 0.5, 0.5, 0.75)
+        love.graphics.circle("line", gridSize*self.scale*(self.otherHoverTile[1]-0.5)+xPos, gridSize*self.scale*(self.otherHoverTile[2]-0.5)+yPos, gridSize*self.scale/2)
     end
 
     love.graphics.setColor(1, 0, 0, 0.25)
@@ -314,6 +320,16 @@ function board:getGridCoordAtPos(posX, posY)
     return self:getGridCoordAtRelativePos(self:getRelativeMouse(posX, posY))
 end
 
+function board:setOtherHover(x, y)
+    if not (x and y) then
+        self.otherHoverTile[1] = nil
+        self.otherHoverTile[2] = nil
+    else
+        self.otherHoverTile[1] = self.cols+1-x
+        self.otherHoverTile[2] = self.rows+1-y
+    end
+end
+
 function board:mousemoved(x, y, xDelta, yDelta, istouch, intercepted)
     if mousePressedX and mousePressedY then
         self.offset[1], self.offset[2] = x/self.scale-mousePressedX, y/self.scale-mousePressedY
@@ -323,10 +339,16 @@ function board:mousemoved(x, y, xDelta, yDelta, istouch, intercepted)
         if self.mouseOver then
             local oldX, oldY = self.hoverTile[1], self.hoverTile[2]
             self.hoverTile[1], self.hoverTile[2] = self:getGridCoordAtRelativePos(relativeX, relativeY)
+            if oldX~=self.hoverTile[1] or oldY~=self.hoverTile[2] then
+                self:sendData(self.localplayer, ('BOARD HOVER: %d %d'):format(unpack(self.hoverTile)))
+            end
             if not intercepted and selectedPiece and not (oldX==self.hoverTile[1] and oldY==self.hoverTile[2]) then
                 hoverAttackHighlight = selectedPiece.attackAreaPreview and {selectedPiece:attackAreaPreview(self.hoverTile[1], self.hoverTile[2])}
             end
         else
+            if self.hoverTile[1] and self.hoverTile[2] then
+                self:sendData(self.localplayer, 'BOARD HOVER: nil nil')
+            end
             self.hoverTile[1], self.hoverTile[2] = nil, nil
         end
     end
