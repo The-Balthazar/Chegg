@@ -1,6 +1,8 @@
 local menu = {}
 menu.__index = menu
 
+local version = 2
+local goodToStart = true
 local connection
 
 require'enet.handlers'
@@ -31,6 +33,7 @@ function menu:new()
     function self.START(button, secondPlayer)
         if not self.deck then return end
         if connection and self.opponentType~='remote' then return end
+        if not goodToStart then return end
         setMode(require'uis.game'.new{
             deck = self.deck,
             isStartingPlayer = not secondPlayer,
@@ -54,6 +57,7 @@ function menu:new()
                     EnetInit(self.ipbutton.text, true)
                     self.ipbutton.selpress = nil
                     connection = true
+                    goodToStart = nil
                     self.ipbutton.text = ('hosting on udp port %s'):format(self.ipbutton.text:match':([%d]+)' or '25565')
                 end,
                 activeIf = function() return not connection end,
@@ -69,6 +73,7 @@ function menu:new()
                     EnetInit(self.ipbutton.text)
                     self.ipbutton.selpress = nil
                     connection = true
+                    goodToStart = nil
                     local i, p = (self.ipbutton.text:match'^([%w%.]+)' or 'localhost'), (self.ipbutton.text:match'(:[%d]+)' or ':25565')
                     self.ipbutton.text = ('connecting to %s%s'):format(i, p)
                 end,
@@ -102,7 +107,7 @@ function menu:new()
                 widthheight = function() return 200, 50 end,
                 press = self.START,
                 text = 'play',
-                activeIf = function() return self.deck and (not connection or connection and self.opponentType=='remote') end,
+                activeIf = function() return self.deck and goodToStart end,
             },
         }
     }
@@ -118,10 +123,28 @@ function menu:update(delta)
     EnetHandle(function(data)
         if data:find'^MSG: ' then
             self.ipbutton.text = data:match'^MSG: (.*)'
-            love.thread.getChannel'comOut':push('DECK: '..table.serialize(self.deck))
+            local com = love.thread.getChannel'comOut'
+            com:push('SCENARIO: '..table.serialize({
+                deck = self.deck,
+                version = version,
+            }))
         elseif data:find'^DECK: return ' then
-            self.opponentDeck = loadstring(data:match'^DECK: (.*)')()
-            self.opponentType = 'remote'
+            self.ipbutton.text = 'other is running an old version'
+        elseif data:find'^SCENARIO: return ' then
+            local success, chunk = pcall(setfenv, loadstring(data:match'^SCENARIO: (.*)', "remote player data"), {})
+            if success then
+                local data = chunk()
+                repr(data)
+                self.opponentDeck = data.deck
+                self.opponentType = 'remote'
+                if data.version==version then
+                    goodToStart = true
+                else
+                    self.ipbutton.text = ('version missmatch error (%d vs %d)'):format(version, data.version)
+                end
+            else
+                self.ipbutton.text = ('connected player sent bad data')
+            end
         elseif data=='START' then
             self.START(nil, true)
         end
