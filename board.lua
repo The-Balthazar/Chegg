@@ -401,7 +401,8 @@ end
 
 function board:wheelmoved(x, y)
     if self.mouseOver and y and y~=0 then
-        self.scaleT = self.scaleT*(1.25^y)
+        local factor = math.clamp(1.25^y, 0.8, 1.25)
+        self.scaleT = self.scaleT*factor
     end
 end
 
