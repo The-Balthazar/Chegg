@@ -104,12 +104,7 @@ function player:startTurn()
     if self.dead then return true end
     local turnNo = self.board.turn
     if turnNo<=0 then return true end
-    if math.ceil(turnNo/2)==1 then
-        self:shuffle()
-        self:draw()
-        self:draw()
-        self:draw()
-    else
+    if turnNo~=1 then
         self:draw()
     end
     self.manaMax = math.min(6, self.manaMax+1)

@@ -117,6 +117,10 @@ local piecetypes; piecetypes = {
             self.player:defeat(instigator)
         end,
         onSummon = function(self)
+            self.player:shuffle()
+            self.player:draw()
+            self.player:draw()
+            self.player:draw()
             if self.player==self.board.localplayer then
                 self.board:endTurn(self.player)
             end
