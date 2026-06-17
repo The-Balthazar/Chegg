@@ -259,12 +259,13 @@ function preview:mousepressed(x, y, button, istouch, presses, intercepted)
     for i, v in ipairs(self.buttons) do v.hover = nil end
     local oldHandPressIndex = handPressIndex
     handPressIndex = mouseOverCard(self, x, y)
-    if oldHandPressIndex ~= handPressIndex then
-        self:sendData(('PREVIEW PRESS: %s'):format(tostring(handPressIndex)))
-    end
     if handHoverIndex and not self.board:canSummon(self.player, self.getHand()[handHoverIndex]) then
         handPressIndex = nil
+        self:sendData('PREVIEW PRESS: nil')
         return true
+    end
+    if oldHandPressIndex ~= handPressIndex then
+        self:sendData(('PREVIEW PRESS: %s'):format(tostring(handPressIndex)))
     end
     if handPressIndex then
         self.board:setHighlightSpawnFor(self.player)
