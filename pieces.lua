@@ -65,7 +65,7 @@ end
 local function nearestDiagonalAttackWithinRange(self, targetX, targetY)
     local x, y = math.abs(self.pos[1]-targetX), math.abs(self.pos[2]-targetY)
     if self.attackRange<x or self.attackRange<y then return end
-    return nearestDiagonalAttackAttack(self, targetX, targetY)
+    return nearestDiagonalAttack(self, targetX, targetY)
 end
 
 local function range1estimate(self, targetX, targetY)
