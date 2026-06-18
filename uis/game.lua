@@ -57,6 +57,7 @@ function game:new()
         onDefeat = endscreen,
         rng = self.rng,
     }
+    self.deck = nil
 
     if self.opponentDeck then
         self.otherplayer = require'player'.new{
@@ -65,6 +66,7 @@ function game:new()
             onDefeat = endscreen,
             rng = self.rng,
         }
+        self.opponentDeck = nil
     end
 
     local first = self.isStartingPlayer
@@ -80,6 +82,8 @@ function game:new()
         otherplayer = self.otherplayer,
         othertype = self.opponentType,
     }
+    self.opponentType = nil
+
     self.activepreview = require'preview'.new{
         board = self.activeboard,
         player = self.localplayer,
