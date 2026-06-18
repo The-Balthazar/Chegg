@@ -39,7 +39,7 @@ function menu:new()
             isStartingPlayer = not secondPlayer,
             opponentType = self.opponentType,
             opponentDeck = self.opponentDeck,
-            seed = self.seed,
+            seed = self.seed or not connection and love.math.random(1, 9999999),
         })
         if self.opponentType=='remote' then
             love.thread.getChannel'comOut':push('START')
