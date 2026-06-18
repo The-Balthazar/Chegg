@@ -292,9 +292,11 @@ function preview:mousereleased(x, y, button, istouch, presses, intercepted)
             local hoverBoard = self.board:screenPosIsOverBoard(x, y)
             local tx, ty = self.board:getGridCoordAtPos(x, y)
             if hoverBoard
-            and self.board:canSummonAt(self.player, hand[handPressIndex], tx, ty)
-            and self.board:summonAt(self.player, hand[handPressIndex], tx, ty) then
-                table.remove(hand, handPressIndex)
+            and self.board:canSummonAt(self.player, hand[handPressIndex], tx, ty) then
+                local card = table.remove(hand, handPressIndex)
+                if card then
+                    self.board:summonAt(self.player, card, tx, ty)
+                end
             end
         end
         handPressIndex = nil

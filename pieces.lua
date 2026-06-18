@@ -915,7 +915,6 @@ end
 
 function piece:onAttackTo(targetX, targetY)
     local board = self.board
-    board:sendData(self.player, ('ATTACK: %d %d %d %d'):format(board:sendXYXY(self.pos[1], self.pos[2], targetX, targetY)) )
     if self.typeData.onAttackTo and self.typeData.onAttackTo(self, targetX, targetY) then
         return
     end

@@ -173,33 +173,39 @@ function game:update(delta)
             if self.activeboard:canEndTurn(self.otherplayer) then
                 self.activeboard:endTurn(self.otherplayer)
             else
-                error"opponent tried to end turn when they can't?"
+                error"DESYNC ERROR: Opponent tried to end turn when they shouldn't be able to."
             end
 
         elseif data:find'^SUMMON:' then
             local t, x, y = data:match': (%a*) (%d*) (%d*)'
-            table.remove(self.otherplayer:getHand())--NOTE not actually synced, just for hand count preview
+            local hand = self.otherplayer:getHand()
+            local pressI = self.otherpreview:getHandPressIndex()
+            if hand[pressI]==t then
+                table.remove(hand, pressI)
+            else
+                local found = table.find(hand,pressI)
+                if found then
+                    print"WARNING: Opponent summoned a creature that doesn't match what they were mousing over."
+                    table.remove(hand, found)
+                else
+                    error"DESYNC ERROR: Opponent tried to summon a creature not found in their hand."
+                end
+            end
             self.activeboard:summonAt(self.otherplayer, t, tonumber(x), tonumber(y))
 
         elseif data:find'^MOVE:' then
             local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
             local piece = self.activeboard:getLivingPieceAt(tonumber(sx), tonumber(sy))
-            if piece.move then
-                piece:move(tonumber(x), tonumber(y))
-            else
-                local x, y = tonumber(x), tonumber(y)
-                piece:onMoveTo(x, y)
-                self.activeboard:moveTo(piece, x, y)
+            if not self.activeboard:movePiece(piece.player, piece, tonumber(x), tonumber(y)) then
+                error"DESYNC ERROR: Opponent made a seemingly illegal move"
             end
 
         elseif data:find'^ATTACK:' then
             local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
-            self.activeboard:attack(self.activeboard:getPiecesAt(tonumber(sx), tonumber(sy))[1], tonumber(x), tonumber(y))
-
-        elseif data:find'^ATTACKTO:' then
-            local sx, sy, x, y = data:match': (%d*) (%d*) (%d*) (%d*)'
             local piece = self.activeboard:getLivingPieceAt(tonumber(sx), tonumber(sy))
-            piece:onAttackTo(tonumber(x), tonumber(y))
+            if not self.activeboard:attackWithPiece(piece.player, piece, tonumber(x), tonumber(y)) then
+                error"DESYNC ERROR: Opponent made a seemingly illegal attack"
+            end
 
         elseif data:find'^PREVIEW HOVER:' then
             local val = data:match': (.*)'

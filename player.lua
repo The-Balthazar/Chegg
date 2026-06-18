@@ -58,10 +58,14 @@ function player:shuffle()
     return true
 end
 
-function player:draw()
+function player:draw(card)
     if self.dead then return end
-    if not self.hand or not self.deck or not self.deck[1] then return end
-    table.insert(self.hand, table.remove(self.deck))
+    if not self.hand or not self.deck or not (card or self.deck[1]) then return end
+    if self==self.board.otherplayer then
+        table.insert(self.hand, 1, card or table.remove(self.deck))
+    else
+        table.insert(self.hand, card or table.remove(self.deck))
+    end
     sounds.play('paper_grab', 1, 0.95+0.1*love.math.random())
     return true
 end

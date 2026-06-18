@@ -465,13 +465,11 @@ function board:moveTo(piece, x, y)
     table.insert(self.grid[x][y], 1, table.removeByValue(self.grid[px][py], piece))
     piece.pos[1], piece.pos[2] = x, y
 
-    self:sendData(piece.player, ('MOVE: %d %d %d %d'):format(self:sendXYXY(px, py, x, y)))
     return true
 end
 
 function board:attack(piece, x, y)
     if self:isWithinBounds(x, y) then
-        self:sendData(piece.player, ('ATTACK: %d %d %d %d'):format(self:sendXYXY(piece.pos[1], piece.pos[2], x, y)))
         if piece.attackEffect then
             piece:attackEffect(x, y)
         end
@@ -491,16 +489,16 @@ function board:movePiece(player, piece, x, y)
     if not piece or not x or not y then return end
     if piece.player~=player then return end
     if not piece:canTravelTo(x, y) then return end
+    self:sendData(player, ('MOVE: %d %d %d %d'):format(self:sendXYXY(piece.pos[1], piece.pos[2], x, y)))
     piece:onMoveTo(x, y)
     if piece.move then
-        self:sendData(player, ('MOVE: %d %d %d %d'):format(self:sendXYXY(piece.pos[1], piece.pos[2], x, y)))
-        return piece:move(x, y)
+        return piece:move(x, y) or true
     else
         if self:getLivingPieceAt(x, y) then
             piece:onAttackTo(x, y)
             self:attack(piece, x, y)
         end
-        return self:moveTo(piece, x, y)
+        return self:moveTo(piece, x, y) or true
     end
 end
 
@@ -509,7 +507,10 @@ function board:attackWithPiece(player, piece, x, y)
     if piece.player~=player then return end
     if not piece:canAttackTo(x, y) then return end
     if self:getLivingPieceAt(x, y) then
-        if piece:getAttackDamage(x, y)==0 then return piece:onAttackTo(x, y) end
+        self:sendData(player, ('ATTACK: %d %d %d %d'):format(self:sendXYXY(piece.pos[1], piece.pos[2], x, y)) )
+        if piece:getAttackDamage(x, y)==0 then
+            return piece:onAttackTo(x, y) or true
+        end
         piece:onAttackTo(x, y)
         if piece.getAttackSplash then
             local coords = {piece:getAttackSplash(x, y)}
