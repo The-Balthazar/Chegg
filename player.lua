@@ -54,7 +54,7 @@ end
 
 function player:shuffle()
     if not self.deck then return end
-    table.randomSort(self.deck)
+    table.randomSort(self.rng, self.deck)
     return true
 end
 

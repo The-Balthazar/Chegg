@@ -28,10 +28,10 @@ function table.removeByValue(t, v)
     end
 end
 
-function table.randomSort(t)
+function table.randomSort(gen, t)
     if not t[1] and not t[2] then return t end
     for i=1, #t do
-        local r = love.math.random(i, #t)
+        local r = gen:random(i, #t)
         if r~=i then
             t[i], t[r] = t[r], t[i]
         end

@@ -26,6 +26,8 @@ function game:new()
                         isStartingPlayer = not self.isStartingPlayer,
                         opponentType = self.activeboard.othertype,
                         opponentDeck = self.otherplayer.startingDeck,
+                        seed = self.seed,
+                        rng = self.rng,
                     })
                     if self.activeboard.othertype=='remote' then
                         love.thread.getChannel'comOut':push('RESTART')
@@ -47,10 +49,13 @@ function game:new()
         end
     end
 
+    self.rng = self.rng or love.math.newRandomGenerator(self.seed)
+
     self.localplayer = require'player'.new{
         deck = self.deck,
         startingDeck = table.copy(self.deck),
         onDefeat = endscreen,
+        rng = self.rng,
     }
 
     if self.opponentDeck then
@@ -58,6 +63,7 @@ function game:new()
             deck = self.opponentDeck,
             startingDeck = table.copy(self.opponentDeck),
             onDefeat = endscreen,
+            rng = self.rng,
         }
     end
 
@@ -156,6 +162,8 @@ function game:update(delta)
                 isStartingPlayer = not self.isStartingPlayer,
                 opponentType = self.activeboard.othertype,
                 opponentDeck = self.otherplayer.startingDeck,
+                seed = self.seed,
+                rng = self.rng,
             })
         elseif data=='ENDTURN' then
             if self.activeboard:canEndTurn(self.otherplayer) then

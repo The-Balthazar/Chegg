@@ -1,7 +1,7 @@
 local menu = {}
 menu.__index = menu
 
-local version = 2
+local version = 3
 local goodToStart = true
 local connection
 
@@ -39,6 +39,7 @@ function menu:new()
             isStartingPlayer = not secondPlayer,
             opponentType = self.opponentType,
             opponentDeck = self.opponentDeck,
+            seed = self.seed,
         })
         if self.opponentType=='remote' then
             love.thread.getChannel'comOut':push('START')
@@ -54,6 +55,7 @@ function menu:new()
                 widthheight = function() return 200, 50 end,
                 press = function()
                     if connection then return end
+                    self.host = love.math.random(0, 9999999)
                     EnetInit(self.ipbutton.text, true)
                     self.ipbutton.selpress = nil
                     connection = true
@@ -126,6 +128,7 @@ function menu:update(delta)
             local com = love.thread.getChannel'comOut'
             com:push('SCENARIO: '..table.serialize({
                 deck = self.deck,
+                seed = self.host,
                 version = version,
             }))
         elseif data:find'^DECK: return ' then
@@ -137,6 +140,7 @@ function menu:update(delta)
                 repr(data)
                 self.opponentDeck = data.deck
                 self.opponentType = 'remote'
+                self.seed = self.host or data.seed
                 if data.version==version then
                     goodToStart = true
                 else
