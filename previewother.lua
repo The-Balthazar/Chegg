@@ -19,8 +19,6 @@ local function drawCardBack(x, y, width, height)
     love.graphics.setColor(1,1,1)
 end
 
-local handHoverIndex, handPressIndex
-
 function preview:draw()
     -- if self.getManaCount then
     --     local count, max = self.getManaCount()
@@ -65,11 +63,11 @@ function preview:draw()
 
             local x, y = love.graphics.getWidth()/2-handwidth/2, -90
 
-            if handPressIndex and not handHoverIndex and self.board and self.board.otherHoverTile[1] and self.board.otherHoverTile[2] then
+            if self.handPressIndex and not self.handHoverIndex and self.board and self.board.otherHoverTile[1] and self.board.otherHoverTile[2] then
                 local tx, ty = unpack(self.board.otherHoverTile)
                 local mx, my = self.board:getTileAbsPos(tx, ty)
-                local x = x+(handPressIndex-1)*(squeeze or width)+(squeeze and width-marginX-marginX or width)/2
-                -- if hoverBoard and self.board:canSummonAt(self.player, hand[handPressIndex], tx, ty) then
+                local x = x+(self.handPressIndex-1)*(squeeze or width)+(squeeze and width-marginX-marginX or width)/2
+                -- if hoverBoard and self.board:canSummonAt(self.player, hand[self.handPressIndex], tx, ty) then
                 --     love.graphics.setColor(0, 0, 1, 1)
                 -- else
                     love.graphics.setColor(1, 1, 1, 1)
@@ -82,7 +80,7 @@ function preview:draw()
 
             for i, v in ipairs(hand) do
                 local item = require'pieces'.getTypeData(v)
-                local y = (handHoverIndex==i or handPressIndex==i) and y-(squeeze and 40 or 20) or y
+                local y = (self.handHoverIndex==i or self.handPressIndex==i) and y-(squeeze and 40 or 20) or y
 
                 if not squeeze then
                     x = x+marginX
@@ -109,7 +107,10 @@ local function correctHandOffset(self, i)
     return i
 end
 
-function preview:setHandHoverIndex(i) handHoverIndex=correctHandOffset(self, i) end
-function preview:setHandPressIndex(i) handPressIndex=correctHandOffset(self, i) end
+function preview:setHandHoverIndex(i) self.handHoverIndex=correctHandOffset(self, i) end
+function preview:setHandPressIndex(i) self.handPressIndex=correctHandOffset(self, i) end
+
+function preview:getHandHoverIndex() return self.handHoverIndex end
+function preview:getHandPressIndex() return self.handPressIndex end
 
 return preview
