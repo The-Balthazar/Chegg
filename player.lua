@@ -76,20 +76,26 @@ function player:getDeckSize()
 end
 
 function player:discardRandom()
-    if not self.hand or not self.hand[1] then return end
-    table.remove(self.hand, love.math.random(1, #self.hand))
-end
-
-function player:addToHand(item)
     if self.dead then return end
-    if not self.hand or not item then return end
-    table.insert(self.hand, item)
-    return true
+    if not self.hand or not self.hand[1] then return end
+    local i = self.rng:random(1, #self.hand)
+    if self==self.board.otherplayer then
+        table.remove(self.hand, #self.hand+1-i)
+    else
+        table.remove(self.hand, i)
+    end
 end
 
 function player:mill()
+    if self.dead then return end
     if not self.deck[1] then return end
     return table.remove(self.deck)
+end
+
+function player:stealCardFromDeckOf(other)
+    if self.dead or other.dead then return end
+    if not (self.deck and other.deck[1]) then return end
+    self:draw(table.remove(other.deck))
 end
 
 function player:canEndTurn()

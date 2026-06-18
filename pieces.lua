@@ -691,38 +691,37 @@ local piecetypes; piecetypes = {
             self.player:takeMana(-1)
         end,
     },
-    -- sniffer = {
-    --     name = 'Sniffer',
-    --     desc = 'Sniffers can move 1 in any direction, and can\'t attack.\n\nWhen summoned you draw 2 from your opponents deck. When killed you discard 2 at random.',
-    --     cost = 5,
-    --     deck = true,
-    --     moveRange = 1,
-    --     attackRange = 0,
-    --     moveCost = 0,
-    --     dashCost = 1,
-    --     canTravelTo = basic1move,
-    --     canAttackTo = nope,
-        -- soundMove = '',
-        -- soundDeath = 'bug_hit',
-        -- soundAttack = '',
-        -- soundSummon = '',
-    --     quad = genQuad(7, 2),
-    --     quadM = genQuad(6, 5),
-    --     quadU = genQuad(7, 9),
-    --     image = spriteAtlas,
-    --     onSummon = function(self)
-    --         local enemy = self.board:getOpponent(self.player)
-    --         if enemy then
-    --             -- TODO Sync hand
-    --             self.player:addToHand(enemy:mill())
-    --             self.player:addToHand(enemy:mill())
-    --         end
-    --     end,
-    --     onKill = function(self, instigator)
-    --         self.player:discardRandom()
-    --         self.player:discardRandom()
-    --     end,
-    -- },
+    sniffer = {
+        name = 'Sniffer',
+        desc = 'Sniffers can move 1 in any direction, and can\'t attack.\n\nWhen summoned you draw 2 from your opponents deck. When killed you discard 2 at random.',
+        cost = 5,
+        deck = true,
+        moveRange = 1,
+        attackRange = 0,
+        moveCost = 0,
+        dashCost = 1,
+        canTravelTo = basic1move,
+        canAttackTo = nope,
+        soundMove = '',
+        soundDeath = 'bug_hit',
+        soundAttack = '',
+        soundSummon = '',
+        quad = genQuad(7, 2),
+        quadM = genQuad(6, 5),
+        quadU = genQuad(7, 9),
+        image = spriteAtlas,
+        onSummon = function(self)
+            local enemy = self.board:getOpponent(self.player)
+            if enemy then
+                self.player:stealCardFromDeckOf(enemy)
+                self.player:stealCardFromDeckOf(enemy)
+            end
+        end,
+        onKill = function(self, instigator)
+            self.player:discardRandom()
+            self.player:discardRandom()
+        end,
+    },
     wither = {
         name = 'Wither',
         desc = 'On summon the Wither explodes, killing anything within 1 range.\n\nIt can move 1 in any direction, and can attack the nearest creature down a given cardinal direction, up to 3 spaces away. This inflicts splash damage to the 4 adjacent tiles.',
