@@ -73,7 +73,7 @@ function preview:draw()
                     love.graphics.setColor(1, 1, 1, 1)
                 -- end
                 love.graphics.setLineWidth(self.board.scale*2.5)
-                love.graphics.line(x, y-(squeeze and 40 or 20), mx, my)
+                love.graphics.line(x, y-20+height, mx, my)
             end
 
             local king = require'pieces'.getTypeData'king'
